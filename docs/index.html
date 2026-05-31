@@ -3,332 +3,910 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Options Terminal — Goldman Sachs Level</title>
+<title>Options Intelligence Terminal — Wall Street Grade</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',monospace;overflow-x:hidden}
-header{background:#161b22;border-bottom:1px solid #30363d;padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
-.logo{font-size:18px;font-weight:700;color:#58a6ff;letter-spacing:1px}
-.badge{background:#388bfd22;color:#58a6ff;border:1px solid #388bfd55;border-radius:12px;padding:3px 10px;font-size:11px}
-.grid{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:12px;padding:16px;height:calc(100vh - 56px)}
-.panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;overflow:hidden}
-.panel-title{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
-.green{background:#3fb950}.yellow{background:#d29922}.red{background:#f85149}.blue{background:#58a6ff}
-/* Greeks panel */
-.greek-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.greek-card{background:#0d1117;border-radius:6px;padding:8px;text-align:center}
-.greek-name{font-size:10px;color:#8b949e}
-.greek-val{font-size:15px;font-weight:700;margin-top:2px}
-/* Smart Money */
-.flow-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #21262d;font-size:11px}
-.tag{border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}
-.tag-call{background:#3fb95022;color:#3fb950}
-.tag-put{background:#f8514922;color:#f85149}
-.tag-sweep{background:#d2992222;color:#d29922}
-.tag-block{background:#58a6ff22;color:#58a6ff}
-.premium{color:#ffd700;font-weight:700;margin-left:auto}
-/* Score */
-.score-ring{display:flex;justify-content:center;margin:8px 0}
-.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
-.metric{background:#0d1117;border-radius:6px;padding:8px}
-.metric-label{font-size:10px;color:#8b949e}
-.metric-val{font-size:14px;font-weight:700;margin-top:2px}
-/* Bottom panels */
-.panel.span2{grid-column:span 2}
-.panel.span3{grid-column:span 3}
-/* Ticker */
-.ticker{display:flex;gap:24px;margin-bottom:10px}
-.ticker-item{display:flex;flex-direction:column}
-.ticker-label{font-size:10px;color:#8b949e}
-.ticker-val{font-size:16px;font-weight:700}
-.up{color:#3fb950}.down{color:#f85149}.neutral{color:#58a6ff}
-/* Chain table */
-table{width:100%;border-collapse:collapse;font-size:11px}
-th{color:#8b949e;font-weight:400;padding:4px 8px;border-bottom:1px solid #21262d;text-align:right}
-th:first-child{text-align:left}
-td{padding:4px 8px;border-bottom:1px solid #161b22;text-align:right;transition:background .15s}
-tr:hover td{background:#21262d}
-.atm{background:#1f2d1f!important}
-.atm td{color:#3fb950}
-/* Alert bar */
-.alert-bar{background:#d2992222;border:1px solid #d29922;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#d29922}
+:root{
+  --bg:#060b14;--bg2:#0d1520;--bg3:#111c2a;--bg4:#162030;
+  --border:#1e2d3d;--border2:#243448;
+  --text:#c9d8e8;--text2:#7a9bb5;--text3:#3d5a73;
+  --green:#00d084;--green2:#00a866;--green-bg:#00d08412;
+  --red:#ff4560;--red2:#cc3349;--red-bg:#ff456012;
+  --yellow:#f5a623;--yellow-bg:#f5a62312;
+  --blue:#2196f3;--blue2:#1565c0;--blue-bg:#2196f312;
+  --purple:#9c27b0;--cyan:#00bcd4;
+  --gold:#ffd700;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,monospace;font-size:13px;overflow-x:hidden}
+
+/* ── TOP BAR ── */
+#topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 20px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+.logo{font-size:16px;font-weight:800;background:linear-gradient(135deg,#00d084,#2196f3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:2px;white-space:nowrap}
+.market-stat{display:flex;flex-direction:column;align-items:center;min-width:70px}
+.market-stat .lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.market-stat .val{font-size:13px;font-weight:700;margin-top:1px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;display:inline-block;margin-right:4px}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 #00d08466}50%{opacity:.7;box-shadow:0 0 0 5px #00d08400}}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.tag{border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;letter-spacing:.5px}
+.tag-bull{background:var(--green-bg);color:var(--green);border:1px solid #00d08433}
+.tag-bear{background:var(--red-bg);color:var(--red);border:1px solid #ff456033}
+.tag-neu{background:var(--blue-bg);color:var(--blue);border:1px solid #2196f333}
+#clock{font-size:11px;color:var(--text3);font-family:monospace}
+
+/* ── MAIN LAYOUT ── */
+#main{display:grid;grid-template-columns:220px 1fr;grid-template-rows:1fr;height:calc(100vh - 45px);gap:0}
+
+/* ── SECTOR SIDEBAR ── */
+#sidebar{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:8px 0}
+.sidebar-title{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;padding:8px 14px 4px}
+.sector-item{display:flex;align-items:center;padding:7px 14px;cursor:pointer;border-left:3px solid transparent;transition:all .15s;gap:8px}
+.sector-item:hover{background:var(--bg3);border-left-color:var(--border2)}
+.sector-item.active{background:var(--bg4);border-left-color:var(--green)}
+.sector-icon{font-size:16px;width:22px;text-align:center}
+.sector-info{flex:1;min-width:0}
+.sector-name{font-size:11px;font-weight:600;color:var(--text)}
+.sector-perf{font-size:10px;margin-top:1px}
+.sector-bar{height:2px;border-radius:1px;margin-top:3px;background:var(--border)}
+.sector-bar-fill{height:100%;border-radius:1px;transition:width .5s}
+
+/* ── CONTENT AREA ── */
+#content{overflow-y:auto;background:var(--bg)}
+
+/* ── SECTOR HEADER ── */
+#sector-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:16px}
+.sector-h-icon{font-size:28px}
+.sector-h-name{font-size:20px;font-weight:800;color:var(--text)}
+.sector-h-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.sector-metrics{display:flex;gap:20px;margin-left:auto}
+.sh-metric{text-align:center}
+.sh-metric .lbl{font-size:9px;color:var(--text3);text-transform:uppercase}
+.sh-metric .val{font-size:15px;font-weight:700;margin-top:2px}
+
+/* ── GRID ── */
+.content-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:12px}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.panel-hdr{padding:10px 14px 8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.panel-hdr-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text2)}
+.panel-body{padding:12px 14px}
+.span2{grid-column:span 2}
+.span3{grid-column:span 3}
+
+/* ── TOP PICKS ── */
+.pick-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.pick-card:hover{border-color:var(--border2);background:var(--bg4)}
+.pick-card.rank1{border-left:3px solid var(--gold)}
+.pick-card.rank2{border-left:3px solid var(--text2)}
+.pick-card.rank3{border-left:3px solid #cd7f32}
+.pick-rank{position:absolute;right:12px;top:10px;font-size:20px;font-weight:900;color:var(--border2)}
+.pick-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.pick-ticker{font-size:18px;font-weight:900;color:var(--text)}
+.pick-company{font-size:11px;color:var(--text2);margin-top:1px}
+.pick-price{font-size:16px;font-weight:700;color:var(--green)}
+.pick-change{font-size:11px;margin-top:1px}
+.score-bar{height:6px;background:var(--border);border-radius:3px;margin:6px 0}
+.score-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green2),var(--green))}
+.pick-signals{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.signal-tag{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:700}
+.pick-thesis{font-size:10px;color:var(--text2);margin-top:8px;line-height:1.5;padding-top:8px;border-top:1px solid var(--border)}
+.target-row{display:flex;gap:12px;margin-top:8px}
+.target-item{flex:1;background:var(--bg);border-radius:4px;padding:5px 8px}
+.target-label{font-size:9px;color:var(--text3)}
+.target-val{font-size:12px;font-weight:700;margin-top:2px}
+
+/* ── FLOW TABLE ── */
+.flow-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px}
+.flow-row:last-child{border-bottom:none}
+.flow-side-c{background:var(--green-bg);color:var(--green);border-radius:3px;padding:1px 5px;font-size:9px;font-weight:800}
+.flow-side-p{background:var(--red-bg);color:var(--red);border-radius:3px;padding:1px 5px;font-size:9px;font-weight:800}
+.flow-premium{color:var(--gold);font-weight:700;margin-left:auto;font-size:12px}
+.flow-sweep{background:#f5a62322;color:var(--yellow);border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700}
+.flow-block{background:var(--blue-bg);color:var(--blue);border-radius:3px;padding:1px 5px;font-size:9px;font-weight:700}
+
+/* ── PREDICTION CHART ── */
+#pred-container{padding:12px 14px}
+.pred-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.pred-range{display:flex;gap:6px}
+.pred-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:10px;transition:all .15s}
+.pred-btn.active{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+
+/* ── SECTOR ROTATION ── */
+.rotation-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:12px 14px}
+.rot-cell{background:var(--bg3);border-radius:5px;padding:8px 6px;text-align:center;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.rot-cell:hover{border-color:var(--border2)}
+.rot-cell.selected{border-color:var(--green)}
+.rot-icon{font-size:18px}
+.rot-name{font-size:9px;color:var(--text2);margin-top:3px}
+.rot-perf{font-size:12px;font-weight:700;margin-top:2px}
+.rot-flow{font-size:9px;margin-top:2px}
+
+/* ── GEX CHART ── */
+.gex-mini{padding:8px 14px}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── TOOLTIP ── */
+.tooltip{position:fixed;background:#0a1929;border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-size:11px;pointer-events:none;z-index:999;display:none;max-width:220px;line-height:1.6}
+
+/* ── ANALYST REPORT ── */
+.report-box{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:11px;line-height:1.7;color:var(--text)}
+.report-box h4{color:var(--gold);font-size:12px;margin-bottom:6px}
+.report-box .bull{color:var(--green)}
+.report-box .bear{color:var(--red)}
+.report-box .neutral{color:var(--yellow)}
+
+/* ── PROBABILITY BARS ── */
+.prob-row{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:11px}
+.prob-label{width:80px;color:var(--text2);text-align:right;flex-shrink:0}
+.prob-bar{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.prob-fill{height:100%;border-radius:4px;transition:width .6s}
+.prob-val{width:36px;text-align:right;font-weight:700}
+
+/* ── MARKET REGIME ── */
+.regime-indicator{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border-radius:6px;margin-bottom:8px}
+.regime-icon{font-size:24px}
+.regime-text{flex:1}
+.regime-name{font-size:14px;font-weight:700}
+.regime-desc{font-size:10px;color:var(--text2);margin-top:2px}
+.regime-score{font-size:22px;font-weight:900}
+
+/* ── DIVIDER ── */
+.section-div{grid-column:span 3;padding:4px 0 0;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:2px;border-top:1px solid var(--border);margin-top:4px}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">⚡ OPTIONS TERMINAL</div>
-  <div style="display:flex;gap:10px;align-items:center">
-    <span style="font-size:12px;color:#8b949e">AAPL · LIVE</span>
-    <span class="badge">Goldman Sachs Level</span>
-    <span class="badge" style="background:#3fb95022;color:#3fb950;border-color:#3fb95055">● CONNECTED</span>
+<!-- ═══════════════ TOP BAR ═══════════════ -->
+<div id="topbar">
+  <div class="logo">⚡ OPTIONS INTELLIGENCE</div>
+
+  <div class="market-stat">
+    <span class="lbl">SPY</span>
+    <span class="val" id="spy-val" style="color:var(--green)">476.82</span>
   </div>
-</header>
-
-<div class="grid">
-
-  <!-- Panel 1: Ticker + Option Chain -->
-  <div class="panel span2">
-    <div class="panel-title"><span class="dot blue"></span>实时期权链</div>
-    <div class="ticker" id="ticker">
-      <div class="ticker-item"><span class="ticker-label">AAPL</span><span class="ticker-val up" id="spot">$189.34</span></div>
-      <div class="ticker-item"><span class="ticker-label">涨跌</span><span class="ticker-val up">+1.24%</span></div>
-      <div class="ticker-item"><span class="ticker-label">IV Rank</span><span class="ticker-val neutral" id="ivr">42</span></div>
-      <div class="ticker-item"><span class="ticker-label">PCR</span><span class="ticker-val" id="pcr" style="color:#d29922">0.82</span></div>
-      <div class="ticker-item"><span class="ticker-label">VIX</span><span class="ticker-val neutral">18.4</span></div>
-    </div>
-    <table id="chain-table">
-      <thead><tr>
-        <th>行权价</th>
-        <th>Call IV</th><th>Call Delta</th><th>Call Bid</th><th>Call Ask</th>
-        <th>Call OI</th>
-        <th></th>
-        <th>Put OI</th>
-        <th>Put Bid</th><th>Put Ask</th><th>Put Delta</th><th>Put IV</th>
-      </tr></thead>
-      <tbody id="chain-body"></tbody>
-    </table>
+  <div class="market-stat">
+    <span class="lbl">QQQ</span>
+    <span class="val" id="qqq-val" style="color:var(--green)">408.14</span>
   </div>
-
-  <!-- Panel 2: Greeks -->
-  <div class="panel">
-    <div class="panel-title"><span class="dot green"></span>18 Greeks 仪表盘</div>
-    <div class="greek-grid" id="greeks-grid"></div>
+  <div class="market-stat">
+    <span class="lbl">VIX</span>
+    <span class="val" id="vix-val" style="color:var(--yellow)">16.8</span>
+  </div>
+  <div class="market-stat">
+    <span class="lbl">GEX</span>
+    <span class="val" style="color:var(--green)">+$8.2B</span>
+  </div>
+  <div class="market-stat">
+    <span class="lbl">Smart $</span>
+    <span class="val" style="color:var(--green)">+$2.1B</span>
+  </div>
+  <div class="market-stat">
+    <span class="lbl">PCR</span>
+    <span class="val" style="color:var(--yellow)">0.78</span>
+  </div>
+  <div class="market-stat">
+    <span class="lbl">市场情绪</span>
+    <span class="val tag tag-bull" style="font-size:11px">偏多</span>
   </div>
 
-  <!-- Panel 3: Smart Money -->
-  <div class="panel">
-    <div class="panel-title"><span class="dot yellow"></span>Smart Money 大单流水</div>
-    <div id="smart-money-list"></div>
+  <div class="topbar-right">
+    <span><span class="live-dot"></span><span style="font-size:10px;color:var(--text3)">LIVE</span></span>
+    <span id="clock" style="font-size:11px;color:var(--text3)"></span>
   </div>
-
-  <!-- Panel 4: GEX -->
-  <div class="panel">
-    <div class="panel-title"><span class="dot red"></span>Gamma 暴露（GEX）</div>
-    <svg id="gex-chart" width="100%" height="180"></svg>
-    <div id="gex-info" style="display:flex;gap:16px;margin-top:8px;font-size:11px"></div>
-  </div>
-
-  <!-- Panel 5: Score -->
-  <div class="panel">
-    <div class="panel-title"><span class="dot blue"></span>综合评分 + 概率分布</div>
-    <svg id="score-svg" width="100%" height="110"></svg>
-    <div class="metrics" id="score-metrics"></div>
-  </div>
-
 </div>
 
+<!-- ═══════════════ MAIN ═══════════════ -->
+<div id="main">
+
+  <!-- ── SIDEBAR ── -->
+  <div id="sidebar">
+    <div class="sidebar-title">板块筛选</div>
+    <div id="sector-list"></div>
+    <div class="sidebar-title" style="margin-top:12px">市场宏观</div>
+    <div style="padding:8px 14px">
+      <div class="regime-indicator" style="padding:8px;margin-bottom:6px">
+        <span class="regime-icon">🟢</span>
+        <div class="regime-text">
+          <div class="regime-name" style="font-size:12px;color:var(--green)">Risk-On</div>
+          <div class="regime-desc">正Gamma · 低VIX · 机构流入</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px">期权隐含未来30天</div>
+      <div class="prob-row"><span class="prob-label">SPY >480</span><div class="prob-bar"><div class="prob-fill" style="width:54%;background:var(--green)"></div></div><span class="prob-val" style="color:var(--green)">54%</span></div>
+      <div class="prob-row"><span class="prob-label">SPY >490</span><div class="prob-bar"><div class="prob-fill" style="width:31%;background:var(--yellow)"></div></div><span class="prob-val" style="color:var(--yellow)">31%</span></div>
+      <div class="prob-row"><span class="prob-label">SPY <460</span><div class="prob-bar"><div class="prob-fill" style="width:18%;background:var(--red)"></div></div><span class="prob-val" style="color:var(--red)">18%</span></div>
+    </div>
+  </div>
+
+  <!-- ── CONTENT ── -->
+  <div id="content">
+    <!-- Sector Header -->
+    <div id="sector-header"></div>
+
+    <!-- Sector Rotation (always visible) -->
+    <div style="background:var(--bg2);border-bottom:1px solid var(--border)">
+      <div style="padding:8px 14px 4px;font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px">板块轮动 — 期权资金流（5日）</div>
+      <div class="rotation-grid" id="rotation-grid"></div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid" id="main-grid"></div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
 <script>
-// ─── 数据模拟 ──────────────────────────────────────────────────
-const SPOT0 = 189.34;
-let spot = SPOT0;
+// ═══════════════════════════════════════════════════════════════
+// 数据定义：11个板块 × 每板块5只股票
+// ═══════════════════════════════════════════════════════════════
 
-const strikes = [175,177.5,180,182.5,185,187.5,190,192.5,195,197.5,200,202.5,205];
-const atmIdx  = 6; // 190 ~ ATM
+const SECTORS = [
+  { id:'tech',   icon:'💻', name:'科技',     etf:'XLK',
+    perf:2.8, flow:+3.2, regime:'bull',
+    stocks:[
+      {t:'NVDA', n:'英伟达',          p:875.40, chg:+3.8, score:94, iv:42, ivrank:38, gex:+12.4, callflow:8.2, pcr:0.62,
+       thesis:'AI算力需求持续爆发，期权市场净Call保费$8.2亿/周，GEX+12.4B显示做市商大量正Gamma对冲，Gamma翻转点$850支撑强劲。IV Rank 38处于历史低位，期权相对便宜，30天隐含涨幅+12%。',
+       targets:{w1:'$920',m1:'$940',m3:'$1050'},probs:[62,44,28],signals:['SWEEP×12','CALL WALL $900','IV CRUSH预期低','鲸鱼连续3天买入']},
+      {t:'MSFT', n:'微软',            p:418.26, chg:+1.2, score:88, iv:22, ivrank:28, gex:+8.1,  callflow:5.4, pcr:0.71,
+       thesis:'Azure AI增长超预期，Copilot渗透率加速。机构连续买入2月份$430 Call，Delta中性策略占比高，显示套利资金建仓。期权隐含1个月目标$435。',
+       targets:{w1:'$425',m1:'$435',m3:'$460'},probs:[58,42,26],signals:['BLOCK×8','机构套利','低IV买入窗口']},
+      {t:'META', n:'Meta',            p:514.82, chg:+2.1, score:85, iv:34, ivrank:45, gex:+5.2,  callflow:4.1, pcr:0.68,
+       thesis:'广告收入创历史新高，Reels变现持续超预期。大单在$520 Call建仓，OI激增180%，显示机构预期财报前突破。',
+       targets:{w1:'$528',m1:'$545',m3:'$590'},probs:[55,38,22],signals:['财报催化','OI激增180%','扫单信号']},
+      {t:'AAPL', n:'苹果',            p:189.34, chg:+1.2, score:78, iv:22, ivrank:35, gex:+9.8,  callflow:3.2, pcr:0.82,
+       thesis:'AI iPhone超级周期预期升温，服务收入增长稳健。GEX支撑位$185，短期看多。', targets:{w1:'$194',m1:'$200',m3:'$215'},probs:[52,36,20],signals:['超级周期催化','GEX支撑$185']},
+      {t:'GOOGL',n:'谷歌',            p:173.52, chg:+0.8, score:76, iv:28, ivrank:32, gex:+4.3,  callflow:2.8, pcr:0.75,
+       thesis:'Gemini AI强势反攻，云业务增长超预期。期权流净多头。', targets:{w1:'$178',m1:'$185',m3:'$200'},probs:[50,34,19],signals:['AI催化','云业务增速']},
+    ]},
+  { id:'health', icon:'🏥', name:'医疗健康', etf:'XLV',
+    perf:1.4, flow:+1.8, regime:'bull',
+    stocks:[
+      {t:'LLY',  n:'礼来',            p:742.18, chg:+2.4, score:91, iv:38, ivrank:42, gex:+6.2, callflow:5.8, pcr:0.58,
+       thesis:'GLP-1减肥药市场空间$1000亿，Mounjaro/Zepbound需求严重供不应求。期权市场连续扫单买入$800 Call，鲸鱼仓位$5.8亿，是本周最强信号之一。30天期权隐含目标$800。',
+       targets:{w1:'$765',m1:'$800',m3:'$880'},probs:[64,48,32],signals:['GLP-1超级周期','SWEEP×15','鲸鱼$5.8亿','OI激增220%']},
+      {t:'UNH',  n:'联合健康',        p:528.40, chg:+0.6, score:82, iv:24, ivrank:30, gex:+4.1, callflow:3.2, pcr:0.72,
+       thesis:'医保管理龙头，估值合理，机构持续增持。期权套保流量减少，显示风险预期下降。',
+       targets:{w1:'$538',m1:'$555',m3:'$590'},probs:[56,40,24],signals:['机构增持','套保流减少','稳健防御']},
+      {t:'ABBV', n:'艾伯维',          p:168.24, chg:+1.1, score:80, iv:28, ivrank:35, gex:+2.8, callflow:2.4, pcr:0.65,
+       thesis:'Skyrizi/Rinvoq接棒Humira，专利悬崖担忧消散。期权市场低IV买入机会。',
+       targets:{w1:'$172',m1:'$178',m3:'$195'},probs:[53,37,21],signals:['专利担忧消散','低IV买点','股息保护']},
+      {t:'MRK',  n:'默克',            p:128.60, chg:+0.4, score:75, iv:22, ivrank:25, gex:+2.2, callflow:1.8, pcr:0.78,
+       thesis:'Keytruda肿瘤免疫疗法持续扩展适应症，管线丰富。', targets:{w1:'$131',m1:'$136',m3:'$148'},probs:[50,35,20],signals:['Keytruda适应症','管线催化']},
+      {t:'PFE',  n:'辉瑞',            p:27.80,  chg:-0.8, score:58, iv:32, ivrank:55, gex:-1.2, callflow:0.8, pcr:1.35,
+       thesis:'新冠业务下滑拖累，Put保护性需求高，负GEX区间，谨慎。', targets:{w1:'$27',m1:'$26',m3:'$28'},probs:[35,22,12],signals:['负GEX区间','高PCR看空','业务转型期']},
+    ]},
+  { id:'energy', icon:'⚡', name:'能源',     etf:'XLE',
+    perf:0.8, flow:+0.9, regime:'neutral',
+    stocks:[
+      {t:'XOM',  n:'埃克森美孚',      p:108.42, chg:+0.9, score:82, iv:26, ivrank:32, gex:+3.8, callflow:2.8, pcr:0.74,
+       thesis:'中东地缘风险溢价支撑油价，自由现金流强劲，连续5年股息增长。机构通过期权套保显示看多意图，$115 Call OI激增。',
+       targets:{w1:'$111',m1:'$118',m3:'$125'},probs:[55,40,25],signals:['地缘溢价','套保看多','高股息保护']},
+      {t:'CVX',  n:'雪佛龙',          p:156.80, chg:+0.6, score:78, iv:24, ivrank:28, gex:+3.2, callflow:2.2, pcr:0.78,
+       thesis:'Hess并购完成后储量大增，管理层承诺股东回报，期权市场净多头。',
+       targets:{w1:'$160',m1:'$168',m3:'$180'},probs:[52,38,22],signals:['并购协同','股东回报','净多头']},
+      {t:'COP',  n:'康菲石油',        p:118.60, chg:+1.2, score:76, iv:28, ivrank:35, gex:+2.4, callflow:1.8, pcr:0.72,
+       thesis:'LNG出口业务增长，低成本生产者优势明显。', targets:{w1:'$122',m1:'$128',m3:'$140'},probs:[50,35,20],signals:['LNG增长','低成本优势']},
+      {t:'SLB',  n:'斯伦贝谢',        p:52.40,  chg:+0.4, score:72, iv:30, ivrank:38, gex:+1.8, callflow:1.2, pcr:0.82,
+       thesis:'油服龙头，全球勘探开采活动回升受益。', targets:{w1:'$54',m1:'$57',m3:'$62'},probs:[48,33,18],signals:['勘探复苏','全球扩张']},
+      {t:'OXY',  n:'西方石油',        p:64.20,  chg:+1.8, score:80, iv:32, ivrank:40, gex:+2.8, callflow:2.2, pcr:0.65,
+       thesis:'巴菲特继续增持，市场信心增强，期权市场跟随买入Call。Buffett效应持续发酵。',
+       targets:{w1:'$67',m1:'$72',m3:'$80'},probs:[58,42,26],signals:['巴菲特增持','跟随效应','SWEEP×6']},
+    ]},
+  { id:'fin',    icon:'🏦', name:'金融',     etf:'XLF',
+    perf:1.6, flow:+2.1, regime:'bull',
+    stocks:[
+      {t:'JPM',  n:'摩根大通',        p:196.48, chg:+1.4, score:88, iv:20, ivrank:22, gex:+7.2, callflow:4.8, pcr:0.65,
+       thesis:'利率高位维持利好净息差，投行业务复苏，资产质量优良。期权市场创今年最大净Call流量，机构建仓$200 Call。30天隐含目标$205。',
+       targets:{w1:'$200',m1:'$208',m3:'$225'},probs:[60,45,28],signals:['净息差扩张','投行复苏','净Call历史高','机构$200 Call']},
+      {t:'GS',   n:'高盛',            p:482.60, chg:+2.1, score:86, iv:24, ivrank:30, gex:+5.4, callflow:3.8, pcr:0.62,
+       thesis:'并购顾问业务强势反弹，资产管理规模创新高。期权市场扫单连续买入$500 Call。',
+       targets:{w1:'$495',m1:'$515',m3:'$555'},probs:[58,42,26],signals:['M&A复苏','扫单$500 Call','资管创高']},
+      {t:'V',    n:'Visa',            p:278.40, chg:+0.8, score:84, iv:18, ivrank:20, gex:+6.8, callflow:3.2, pcr:0.68,
+       thesis:'全球消费复苏，跨境交易量持续增长，护城河最强支付网络。低IV买点。',
+       targets:{w1:'$284',m1:'$292',m3:'$310'},probs:[56,40,24],signals:['低IV买点','跨境增长','消费复苏']},
+      {t:'BAC',  n:'美国银行',        p:36.82,  chg:+1.0, score:78, iv:22, ivrank:26, gex:+4.2, callflow:2.4, pcr:0.72,
+       thesis:'利率环境改善，贷款增长稳健。巴菲特大幅持仓背书。', targets:{w1:'$38',m1:'$40',m3:'$44'},probs:[52,37,22],signals:['巴菲特持仓','利率改善','贷款增长']},
+      {t:'MS',   n:'摩根士丹利',      p:96.40,  chg:+1.6, score:82, iv:22, ivrank:28, gex:+3.8, callflow:2.8, pcr:0.68,
+       thesis:'财富管理业务稳健增长，投行管线改善。期权净多头信号强。', targets:{w1:'$99',m1:'$104',m3:'$115'},probs:[54,39,23],signals:['财富管理','投行改善','净多头']},
+    ]},
+  { id:'cdisc',  icon:'🛒', name:'非必需消费',etf:'XLY',
+    perf:1.2, flow:+1.4, regime:'bull',
+    stocks:[
+      {t:'AMZN', n:'亚马逊',          p:186.40, chg:+1.6, score:90, iv:28, ivrank:32, gex:+8.4, callflow:5.2, pcr:0.64,
+       thesis:'AWS增速加速，广告业务爆发，Bedrock AI平台快速商业化。期权市场$200 Call成为最大仓位，净保费流$5.2亿。隐含30天目标$198。',
+       targets:{w1:'$192',m1:'$200',m3:'$220'},probs:[62,46,30],signals:['AWS加速','广告爆发','$200 Call墙','净流$5.2亿']},
+      {t:'TSLA', n:'特斯拉',          p:248.42, chg:+3.2, score:82, iv:56, ivrank:48, gex:-2.4, callflow:4.8, pcr:0.72,
+       thesis:'FSD v12里程碑，RoboTaxi即将发布，期权波动率高但Call保费大量流入。高IV高风险高回报。负GEX但Call Wall$270强支撑。',
+       targets:{w1:'$265',m1:'$280',m3:'$320'},probs:[52,36,20],signals:['FSD催化','RoboTaxi','高IV高波动','Call Wall $270']},
+      {t:'HD',   n:'家得宝',          p:368.20, chg:+0.4, score:76, iv:20, ivrank:22, gex:+3.8, callflow:2.2, pcr:0.78,
+       thesis:'住房装修需求稳健，利率下行周期提振预期。低IV防御性买入。', targets:{w1:'$374',m1:'$382',m3:'$400'},probs:[50,35,20],signals:['利率下行受益','低IV防御','住房需求']},
+      {t:'MCD',  n:'麦当劳',          p:294.60, chg:+0.2, score:74, iv:18, ivrank:18, gex:+3.2, callflow:1.8, pcr:0.82,
+       thesis:'全球特许经营模式抗通胀，股息增长26年连续。', targets:{w1:'$298',m1:'$305',m3:'$320'},probs:[48,34,19],signals:['26年股息增长','特许模式','稳健防御']},
+      {t:'NKE',  n:'耐克',            p:104.80, chg:+0.8, score:72, iv:30, ivrank:42, gex:+1.8, callflow:1.4, pcr:0.88,
+       thesis:'中国市场复苏预期改善，新CEO战略调整，期权市场看好转型。', targets:{w1:'$108',m1:'$114',m3:'$128'},probs:[46,32,18],signals:['中国复苏','CEO战略','转型预期']},
+    ]},
+  { id:'ind',    icon:'🏭', name:'工业',     etf:'XLI',
+    perf:0.6, flow:+0.8, regime:'neutral',
+    stocks:[
+      {t:'CAT',  n:'卡特彼勒',        p:358.40, chg:+0.8, score:82, iv:24, ivrank:28, gex:+4.2, callflow:2.8, pcr:0.68,
+       thesis:'全球基建投资热潮，美国基建法案落地，矿业设备需求旺盛。机构连续买入$370 Call。',
+       targets:{w1:'$365',m1:'$378',m3:'$400'},probs:[55,40,24],signals:['基建主题','$370 Call机构','矿业需求旺']},
+      {t:'GE',   n:'GE航空',          p:158.60, chg:+1.4, score:84, iv:26, ivrank:30, gex:+3.8, callflow:3.2, pcr:0.62,
+       thesis:'分拆后聚焦航空发动机，商业航空后疫情复苏持续，订单积压创历史新高。期权Call保费创历史新高。',
+       targets:{w1:'$164',m1:'$172',m3:'$185'},probs:[58,42,26],signals:['航空复苏','订单创高','Call保费创高']},
+      {t:'HON',  n:'霍尼韦尔',        p:198.40, chg:+0.6, score:78, iv:20, ivrank:24, gex:+3.4, callflow:2.2, pcr:0.72,
+       thesis:'工业自动化+航空防务双轮驱动，AI驱动的工厂自动化受益。', targets:{w1:'$203',m1:'$210',m3:'$225'},probs:[52,37,22],signals:['自动化受益','防务支出','AI工厂']},
+      {t:'UNP',  n:'联合太平洋铁路',  p:244.80, chg:+0.4, score:75, iv:18, ivrank:20, gex:+3.0, callflow:1.8, pcr:0.75,
+       thesis:'铁路运量持续恢复，效率改善提振利润率。低IV稳健买点。', targets:{w1:'$249',m1:'$256',m3:'$272'},probs:[50,35,20],signals:['运量恢复','效率改善','低IV买点']},
+      {t:'BA',   n:'波音',            p:198.20, chg:+1.8, score:70, iv:42, ivrank:55, gex:-1.8, callflow:1.2, pcr:1.05,
+       thesis:'供应链问题逐步改善，737 MAX交付加速，但负GEX区间高波动，谨慎参与。', targets:{w1:'$205',m1:'$215',m3:'$240'},probs:[44,30,16],signals:['交付改善','高波动谨慎','负GEX区间']},
+    ]},
+  { id:'mat',    icon:'⚗️',  name:'材料',     etf:'XLB',
+    perf:-0.2, flow:-0.4, regime:'neutral',
+    stocks:[
+      {t:'LIN',  n:'林德',            p:468.20, chg:+0.6, score:80, iv:18, ivrank:20, gex:+2.8, callflow:1.8, pcr:0.70,
+       thesis:'工业气体龙头，AI数据中心冷却需求激增，氢能经济长期受益。低IV高质量买点。',
+       targets:{w1:'$476',m1:'$485',m3:'$510'},probs:[54,38,22],signals:['AI冷却需求','氢能受益','低IV高质']},
+      {t:'NEM',  n:'纽蒙特',          p:38.80,  chg:+1.2, score:76, iv:32, ivrank:38, gex:+1.4, callflow:1.2, pcr:0.68,
+       thesis:'黄金价格高位，Fed降息周期利好黄金矿商，期权买入增加。',
+       targets:{w1:'$40',m1:'$43',m3:'$48'},probs:[52,36,20],signals:['金价高位','降息受益','期权买入增']},
+      {t:'APD',  n:'空气化工产品',    p:228.40, chg:+0.4, score:74, iv:22, ivrank:26, gex:+2.2, callflow:1.4, pcr:0.74,
+       thesis:'清洁氢能领域最大投资者，政策补贴加速商业化。', targets:{w1:'$233',m1:'$240',m3:'$258'},probs:[50,34,19],signals:['氢能政策','最大投资者','补贴加速']},
+      {t:'FCX',  n:'自由港麦克莫兰',  p:44.20,  chg:+2.4, score:78, iv:36, ivrank:44, gex:+1.8, callflow:1.6, pcr:0.62,
+       thesis:'铜价受AI+新能源需求推动长牛，期权连续扫单买入$48 Call。',
+       targets:{w1:'$46',m1:'$50',m3:'$58'},probs:[55,38,22],signals:['铜长牛主题','扫单$48 Call','AI+新能源铜']},
+      {t:'ALB',  n:'雅保',            p:108.40, chg:-1.2, score:55, iv:52, ivrank:65, gex:-2.4, callflow:0.6, pcr:1.45,
+       thesis:'锂价低迷拖累，Put保护需求高，负GEX区间，等待锂价反转信号再介入。', targets:{w1:'$104',m1:'$102',m3:'$120'},probs:[32,20,10],signals:['锂价低迷','高PCR看空','等待反转']},
+    ]},
+  { id:'util',   icon:'🔌', name:'公用事业', etf:'XLU',
+    perf:0.4, flow:+0.6, regime:'neutral',
+    stocks:[
+      {t:'NEE',  n:'下一代能源',       p:62.40,  chg:+0.8, score:82, iv:20, ivrank:22, gex:+2.8, callflow:2.4, pcr:0.62,
+       thesis:'美国最大可再生能源公司，AI数据中心电力需求爆炸性增长，FPL长期合同锁定收益。期权Call保费大幅增加。',
+       targets:{w1:'$64',m1:'$67',m3:'$74'},probs:[56,40,24],signals:['AI电力需求','最大可再生','Call激增','数据中心受益']},
+      {t:'VST',  n:'Vistra',          p:86.40,  chg:+3.2, score:86, iv:38, ivrank:42, gex:+2.4, callflow:2.8, pcr:0.58,
+       thesis:'核电+天然气组合，AI数据中心签约量创历史新高。今年涨幅最大的S&P500个股，期权Net Call创历史最大。',
+       targets:{w1:'$92',m1:'$98',m3:'$115'},probs:[60,44,28],signals:['核电AI需求','Net Call历史最大','年涨幅冠军','数据中心签约']},
+      {t:'CEG',  n:'星座能源',         p:198.40, chg:+2.8, score:84, iv:36, ivrank:40, gex:+2.2, callflow:2.6, pcr:0.60,
+       thesis:'纯核电公司，微软签署20年PPA协议，AI电力供应商地位确立，机构大量买入。',
+       targets:{w1:'$208',m1:'$218',m3:'$245'},probs:[58,42,26],signals:['微软20年PPA','纯核电稀缺','机构大量买入','AI电力供应商']},
+      {t:'DUK',  n:'杜克能源',         p:98.40,  chg:+0.4, score:74, iv:18, ivrank:18, gex:+2.0, callflow:1.4, pcr:0.72,
+       thesis:'传统公用事业防御配置，稳定股息，低IV买点。', targets:{w1:'$100',m1:'$103',m3:'$110'},probs:[50,35,20],signals:['防御配置','低IV买点','股息稳定']},
+      {t:'AES',  n:'AES公司',          p:18.40,  chg:-0.4, score:62, iv:28, ivrank:35, gex:+0.8, callflow:0.6, pcr:0.92,
+       thesis:'新能源转型进展缓慢，债务压力较大，期权信号中性偏弱。', targets:{w1:'$18',m1:'$19',m3:'$21'},probs:[42,28,15],signals:['转型进展慢','债务压力','中性信号']},
+    ]},
+  { id:'comm',   icon:'📡', name:'通信服务', etf:'XLC',
+    perf:1.8, flow:+1.6, regime:'bull',
+    stocks:[
+      {t:'NFLX', n:'奈飞',            p:625.40, chg:+2.8, score:88, iv:34, ivrank:38, gex:+4.8, callflow:4.2, pcr:0.60,
+       thesis:'广告支撑增长+密码共享打击效果超预期，自由现金流大幅改善。期权市场连续扫单买入$650 Call，鲸鱼保费$4.2亿。',
+       targets:{w1:'$645',m1:'$670',m3:'$720'},probs:[60,44,28],signals:['广告增长','密码整治','扫单$650 Call','鲸鱼$4.2亿']},
+      {t:'DIS',  n:'迪士尼',          p:112.40, chg:+1.2, score:80, iv:26, ivrank:32, gex:+3.4, callflow:2.8, pcr:0.68,
+       thesis:'流媒体扭亏为盈，主题公园业务强劲，期权市场看好管理层转型。机构买入$120 Call。',
+       targets:{w1:'$116',m1:'$122',m3:'$135'},probs:[54,38,22],signals:['流媒体盈利','主题公园强','机构$120 Call']},
+      {t:'T',    n:'AT&T',            p:17.40,  chg:+0.4, score:72, iv:20, ivrank:24, gex:+1.8, callflow:1.2, pcr:0.75,
+       thesis:'5G建设完成，债务高峰已过，股息可持续性改善，低估值高股息防御。', targets:{w1:'$17.8',m1:'$18.5',m3:'$20'},probs:[48,34,18],signals:['债务改善','低估值高息','5G完成']},
+      {t:'CHTR', n:'特许通信',         p:368.40, chg:+0.8, score:74, iv:28, ivrank:34, gex:+2.4, callflow:1.6, pcr:0.78,
+       thesis:'有线+互联网捆绑套餐稳定现金流，股票回购力度大。', targets:{w1:'$375',m1:'$385',m3:'$410'},probs:[50,35,20],signals:['强劲回购','稳定现金流','捆绑套餐']},
+      {t:'TMUS', n:'T-Mobile',        p:168.40, chg:+1.4, score:82, iv:22, ivrank:26, gex:+3.2, callflow:2.4, pcr:0.65,
+       thesis:'5G市场份额持续蚕食AT&T/Verizon，用户净增行业第一，期权净多头信号强。', targets:{w1:'$174',m1:'$180',m3:'$195'},probs:[56,40,24],signals:['市场份额提升','净增第一','期权净多头']},
+    ]},
+  { id:'staple', icon:'🛍️', name:'必需消费', etf:'XLP',
+    perf:0.2, flow:+0.3, regime:'neutral',
+    stocks:[
+      {t:'WMT',  n:'沃尔玛',          p:62.40,  chg:+0.6, score:82, iv:18, ivrank:18, gex:+4.8, callflow:2.8, pcr:0.65,
+       thesis:'电商+实体融合，广告媒体业务新增长，高收入客户群快速扩张。低IV高质量买点。',
+       targets:{w1:'$64',m1:'$66',m3:'$72'},probs:[56,40,24],signals:['电商增长','广告新业务','低IV买点','高收入客群']},
+      {t:'COST', n:'好市多',          p:812.40, chg:+0.8, score:84, iv:18, ivrank:20, gex:+4.2, callflow:2.4, pcr:0.60,
+       thesis:'会员费提价成功，续费率历史最高97%，全球扩张加速，期权净Call信号持续。',
+       targets:{w1:'$828',m1:'$845',m3:'$900'},probs:[58,42,26],signals:['提价成功','97%续费率','全球扩张','净Call信号']},
+      {t:'PG',   n:'宝洁',            p:156.40, chg:+0.4, score:76, iv:16, ivrank:16, gex:+3.4, callflow:1.8, pcr:0.70,
+       thesis:'提价能力强，品牌护城河深，低IV最低历史分位，期权便宜买入机会。', targets:{w1:'$159',m1:'$163',m3:'$172'},probs:[52,37,21],signals:['低IV历史低位','提价能力','品牌护城河']},
+      {t:'KO',   n:'可口可乐',         p:60.40,  chg:+0.2, score:72, iv:16, ivrank:14, gex:+2.8, callflow:1.4, pcr:0.72,
+       thesis:'全球最强品牌之一，巴菲特重仓，稳定股息30年+，防御性配置。', targets:{w1:'$61',m1:'$63',m3:'$67'},probs:[50,35,20],signals:['巴菲特重仓','30年股息','防御配置']},
+      {t:'MDLZ', n:'亿滋国际',         p:74.40,  chg:+0.2, score:70, iv:18, ivrank:18, gex:+2.2, callflow:1.2, pcr:0.75,
+       thesis:'全球零食龙头，新兴市场增长，定价权强，期权中性偏多。', targets:{w1:'$76',m1:'$78',m3:'$84'},probs:[48,33,18],signals:['新兴市场增长','定价权强','中性偏多']},
+    ]},
+  { id:'re',     icon:'🏢', name:'房地产',   etf:'XLRE',
+    perf:-0.4, flow:-0.2, regime:'bear',
+    stocks:[
+      {t:'AMT',  n:'美国铁塔',         p:198.40, chg:+1.2, score:78, iv:22, ivrank:28, gex:+2.8, callflow:1.8, pcr:0.68,
+       thesis:'5G和AI数据中心天线需求，利率下行周期最直接受益REIT，机构已开始回补仓位。',
+       targets:{w1:'$204',m1:'$212',m3:'$230'},probs:[54,38,22],signals:['降息受益','5G需求','机构回补','AI天线需求']},
+      {t:'PLD',  n:'普洛斯',           p:118.40, chg:+0.8, score:76, iv:20, ivrank:24, gex:+2.4, callflow:1.6, pcr:0.72,
+       thesis:'电商物流仓储需求，降息周期受益，全球仓储龙头地位稳固。', targets:{w1:'$122',m1:'$128',m3:'$140'},probs:[52,36,21],signals:['电商仓储','降息受益','全球龙头']},
+      {t:'EQIX', n:'益昆尼克斯',       p:822.40, chg:+1.4, score:80, iv:22, ivrank:26, gex:+3.0, callflow:2.2, pcr:0.62,
+       thesis:'全球数据中心龙头，AI算力需求直接受益，期权净Call信号强。',
+       targets:{w1:'$842',m1:'$860',m3:'$920'},probs:[56,40,24],signals:['AI数据中心','全球龙头','期权净Call']},
+      {t:'SPG',  n:'西蒙地产',         p:148.40, chg:+0.4, score:68, iv:24, ivrank:32, gex:+1.8, callflow:1.0, pcr:0.88,
+       thesis:'高端购物中心复苏，但利率压力持续，期权信号中性。', targets:{w1:'$151',m1:'$156',m3:'$168'},probs:[46,32,17],signals:['高端复苏','利率压力','中性信号']},
+      {t:'O',    n:'Realty Income',   p:54.40,  chg:+0.6, score:72, iv:18, ivrank:20, gex:+2.0, callflow:1.2, pcr:0.68,
+       thesis:'"月月分红"公司，降息周期估值修复，机构低位配置。', targets:{w1:'$56',m1:'$58',m3:'$63'},probs:[50,35,20],signals:['降息估值修复','月月分红','机构低配']},
+    ]},
+];
 
-function bsmApprox(S, K, T, sigma, isCall) {
-  const d1 = (Math.log(S/K) + (0.05 + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
-  const d2 = d1 - sigma*Math.sqrt(T);
-  const N  = x => 0.5*(1+Math.sign(x)*Math.sqrt(1-Math.exp(-0.7854*x*x)));
-  const price = isCall ? S*N(d1) - K*Math.exp(-0.05*T)*N(d2)
-                       : K*Math.exp(-0.05*T)*N(-d2) - S*N(-d1);
-  const delta = isCall ? N(d1) : N(d1)-1;
-  const gamma = Math.exp(-0.5*d1*d1)/(S*sigma*Math.sqrt(2*Math.PI*T));
-  return {price: Math.max(0.01, price), delta, gamma};
+// ═══════════════════════════════════════════════════════════════
+// State
+// ═══════════════════════════════════════════════════════════════
+let activeSector = SECTORS[0];
+
+// ═══════════════════════════════════════════════════════════════
+// 工具函数
+// ═══════════════════════════════════════════════════════════════
+const fmt = (n, d=2) => typeof n==='number' ? n.toFixed(d) : n;
+const fmtPrem = v => v>=1000?`$${(v/1000).toFixed(1)}B`:v>=1?`$${v.toFixed(1)}M`:`$${(v*1000).toFixed(0)}K`;
+const scoreColor = s => s>=85?'var(--green)':s>=70?'var(--yellow)':'var(--red)';
+const signalColors = {
+  'SWEEP×': '#f5a623','SWEEP': '#f5a623',
+  'BLOCK': 'var(--blue)','机构': 'var(--cyan)',
+  'Call Wall': 'var(--green)','Put Wall': 'var(--red)',
+  'IV': 'var(--purple)','GEX': 'var(--green)','鲸鱼': 'var(--gold)',
+  'OI激增': 'var(--yellow)','Net Call': 'var(--green)','扫单': 'var(--yellow)',
+};
+function signalColor(s) {
+  for(const [k,v] of Object.entries(signalColors)) if(s.includes(k)) return v;
+  return 'var(--text2)';
 }
 
-function getChainData() {
-  const T = 30/365;
-  return strikes.map((K, i) => {
-    const otm   = (K - spot) / spot;
-    const skew  = Math.max(0, -otm * 0.4);
-    const sigma = 0.22 + skew + (Math.random()-0.5)*0.003;
-    const call  = bsmApprox(spot, K, T, sigma, true);
-    const put   = bsmApprox(spot, K, T, sigma, false);
-    const callOI = Math.round(5000 * Math.exp(-Math.abs(i-atmIdx)*0.6) + Math.random()*500);
-    const putOI  = Math.round(4500 * Math.exp(-Math.abs(i-atmIdx)*0.5) + Math.random()*500);
-    return {K, sigma, call, put, callOI, putOI};
-  });
-}
-
-// ─── 期权链渲染 ───────────────────────────────────────────────
-function renderChain() {
-  const data = getChainData();
-  const tbody = document.getElementById('chain-body');
-  tbody.innerHTML = data.map((d,i) => {
-    const isAtm = i === atmIdx;
-    const cls = isAtm ? 'atm' : '';
-    const spread = d.call.price * 0.02;
-    return `<tr class="${cls}">
-      <td style="text-align:left;font-weight:700">${d.K}</td>
-      <td>${(d.sigma*100).toFixed(1)}%</td>
-      <td>${d.call.delta.toFixed(2)}</td>
-      <td>${(d.call.price-spread/2).toFixed(2)}</td>
-      <td>${(d.call.price+spread/2).toFixed(2)}</td>
-      <td style="color:#58a6ff">${d.callOI.toLocaleString()}</td>
-      <td style="text-align:center;color:#30363d">│</td>
-      <td style="color:#f85149">${d.putOI.toLocaleString()}</td>
-      <td>${(d.put.price-spread/2).toFixed(2)}</td>
-      <td>${(d.put.price+spread/2).toFixed(2)}</td>
-      <td>${d.put.delta.toFixed(2)}</td>
-      <td>${(d.sigma*100).toFixed(1)}%</td>
-    </tr>`;
+// ═══════════════════════════════════════════════════════════════
+// 渲染板块侧边栏
+// ═══════════════════════════════════════════════════════════════
+function renderSidebar() {
+  document.getElementById('sector-list').innerHTML = SECTORS.map(s => {
+    const c = s.perf>=1.5?'var(--green)':s.perf>=0?'var(--yellow)':'var(--red)';
+    const fp = Math.min(100,Math.max(0,(s.flow+4)/8*100));
+    return `<div class="sector-item${s.id===activeSector.id?' active':''}" onclick="setSector('${s.id}')">
+      <span class="sector-icon">${s.icon}</span>
+      <div class="sector-info">
+        <div class="sector-name">${s.name} <span style="font-size:9px;color:var(--text3)">${s.etf}</span></div>
+        <div class="sector-perf" style="color:${c}">${s.perf>=0?'+':''}${s.perf}% &nbsp;
+          <span style="color:var(--text3)">${s.flow>=0?'▲':'▼'} ${Math.abs(s.flow).toFixed(1)}B</span>
+        </div>
+        <div class="sector-bar"><div class="sector-bar-fill" style="width:${fp}%;background:${c}"></div></div>
+      </div>
+    </div>`;
   }).join('');
 }
 
-// ─── Greeks仪表盘 ─────────────────────────────────────────────
-const greeksData = [
-  {name:'Delta',  val:0.52,  color:'#3fb950'},
-  {name:'Gamma',  val:0.024, color:'#58a6ff'},
-  {name:'Theta',  val:-0.08, color:'#f85149'},
-  {name:'Vega',   val:0.18,  color:'#d29922'},
-  {name:'Rho',    val:0.09,  color:'#8b949e'},
-  {name:'Vanna',  val:-0.003,color:'#a371f7'},
-  {name:'Charm',  val:-0.01, color:'#79c0ff'},
-  {name:'Vomma',  val:0.002, color:'#ffa657'},
-  {name:'Speed',  val:-0.001,color:'#ff7b72'},
-  {name:'Zomma',  val:0.0004,color:'#d2a8ff'},
-  {name:'Color',  val:-0.002,color:'#7ee787'},
-  {name:'Ultima', val:0.0001,color:'#ffa657'},
-  {name:'GEX',    val:2.4,   color:'#3fb950', unit:'M'},
-  {name:'DEX',    val:8.1,   color:'#58a6ff', unit:'M'},
-  {name:'IVR',    val:42,    color:'#d29922',  unit:''},
-  {name:'Skew',   val:-0.03, color:'#ff7b72'},
-  {name:'VolTS',  val:0.015, color:'#79c0ff'},
-  {name:'PCR',    val:0.82,  color:'#d29922'},
-];
+// ═══════════════════════════════════════════════════════════════
+// 渲染板块轮动
+// ═══════════════════════════════════════════════════════════════
+function renderRotation() {
+  document.getElementById('rotation-grid').innerHTML = SECTORS.map(s => {
+    const c = s.perf>=1.5?'var(--green)':s.perf>=0?'var(--yellow)':'var(--red)';
+    const fc = s.flow>=1?'var(--green)':s.flow>=0?'var(--yellow)':'var(--red)';
+    return `<div class="rot-cell${s.id===activeSector.id?' selected':''}" onclick="setSector('${s.id}')">
+      <div class="rot-icon">${s.icon}</div>
+      <div class="rot-name">${s.name}</div>
+      <div class="rot-perf" style="color:${c}">${s.perf>=0?'+':''}${s.perf}%</div>
+      <div class="rot-flow" style="color:${fc}">${s.flow>=0?'▲':'▼'}${Math.abs(s.flow).toFixed(1)}B</div>
+    </div>`;
+  }).join('');
+}
 
-document.getElementById('greeks-grid').innerHTML = greeksData.map(g =>
-  `<div class="greek-card">
-    <div class="greek-name">${g.name}</div>
-    <div class="greek-val" style="color:${g.color}">${g.val}${g.unit||''}</div>
-  </div>`
-).join('');
+// ═══════════════════════════════════════════════════════════════
+// 渲染板块主内容
+// ═══════════════════════════════════════════════════════════════
+function renderSectorContent(s) {
+  // Header
+  const hc = s.perf>=1.5?'var(--green)':s.perf>=0?'var(--yellow)':'var(--red)';
+  document.getElementById('sector-header').innerHTML = `
+    <span class="sector-h-icon">${s.icon}</span>
+    <div>
+      <div class="sector-h-name">${s.name}板块</div>
+      <div class="sector-h-sub">${s.etf} · ${s.stocks.length}只核心标的 ·
+        <span style="color:${hc}">${s.regime==='bull'?'🟢 看多':(s.regime==='bear'?'🔴 看空':'🟡 中性')}</span>
+      </div>
+    </div>
+    <div class="sector-metrics">
+      <div class="sh-metric"><div class="lbl">板块涨跌</div><div class="val" style="color:${hc}">${s.perf>=0?'+':''}${s.perf}%</div></div>
+      <div class="sh-metric"><div class="lbl">期权净流</div><div class="val" style="color:${s.flow>=0?'var(--green)':'var(--red)'}">${s.flow>=0?'+':''}${s.flow}B</div></div>
+      <div class="sh-metric"><div class="lbl">Top综合分</div><div class="val" style="color:var(--gold)">${s.stocks[0].score}</div></div>
+      <div class="sh-metric"><div class="lbl">标的数量</div><div class="val">${s.stocks.length}</div></div>
+    </div>`;
 
-// ─── Smart Money 流水 ─────────────────────────────────────────
-const flows = [
-  {time:'15:42:18',sym:'AAPL',type:'C',K:195,exp:'1/17',size:2500,prem:'$1.2M',side:'BUY', sweep:true, block:false},
-  {time:'15:38:05',sym:'AAPL',type:'P',K:185,exp:'1/17',size:800, prem:'$320K',side:'BUY', sweep:false,block:true},
-  {time:'15:31:44',sym:'AAPL',type:'C',K:200,exp:'2/21',size:1200,prem:'$480K',side:'BUY', sweep:true, block:false},
-  {time:'15:28:12',sym:'AAPL',type:'C',K:190,exp:'1/10',size:3000,prem:'$2.1M',side:'BUY', sweep:true, block:true},
-  {time:'15:21:33',sym:'AAPL',type:'P',K:180,exp:'1/17',size:600, prem:'$180K',side:'BUY', sweep:false,block:false},
-  {time:'15:14:07',sym:'AAPL',type:'C',K:192,exp:'1/24',size:900, prem:'$270K',side:'SELL',sweep:false,block:false},
-  {time:'15:08:55',sym:'AAPL',type:'P',K:187,exp:'1/17',size:1500,prem:'$525K',side:'BUY', sweep:true, block:false},
-];
+  // 按评分排序，取Top3
+  const sorted = [...s.stocks].sort((a,b) => b.score - a.score);
+  const top3   = sorted.slice(0,3);
+  const rest   = sorted.slice(3);
 
-document.getElementById('smart-money-list').innerHTML = flows.map(f =>
-  `<div class="flow-row">
-    <span style="color:#484f58;font-size:10px">${f.time}</span>
-    <span class="tag ${f.type==='C'?'tag-call':'tag-put'}">${f.side} ${f.type}</span>
-    <span style="color:#e6edf3;font-weight:700">${f.sym} $${f.K}</span>
-    <span style="color:#484f58">${f.exp}</span>
-    ${f.sweep?'<span class="tag tag-sweep">SWEEP</span>':''}
-    ${f.block?'<span class="tag tag-block">BLOCK</span>':''}
-    <span class="premium">${f.prem}</span>
-  </div>`
-).join('');
+  const rankClass = ['rank1','rank2','rank3'];
+  const rankMedal = ['🥇','🥈','🥉'];
 
-// ─── GEX 柱状图 ───────────────────────────────────────────────
-function renderGEX() {
-  const svg = d3.select('#gex-chart');
-  const W = document.getElementById('gex-chart').clientWidth || 320;
-  const H = 180;
-  svg.attr('viewBox', `0 0 ${W} ${H}`).selectAll('*').remove();
+  const picksHTML = top3.map((st,i) => `
+    <div class="pick-card ${rankClass[i]}" onclick="showDetail('${st.t}','${s.id}')">
+      <div class="pick-rank">${rankMedal[i]}</div>
+      <div class="pick-top">
+        <div>
+          <div class="pick-ticker">${st.t}</div>
+          <div class="pick-company">${st.n}</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div class="pick-price">$${st.p}</div>
+          <div class="pick-change" style="color:${st.chg>=0?'var(--green)':'var(--red)'}">${st.chg>=0?'+':''}${st.chg}%</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="font-size:10px;color:var(--text3)">综合评分</span>
+        <span style="font-size:14px;font-weight:800;color:${scoreColor(st.score)}">${st.score}</span>
+        <span style="font-size:9px;color:var(--text3)">/100</span>
+      </div>
+      <div class="score-bar"><div class="score-bar-fill" style="width:${st.score}%"></div></div>
+      <div class="target-row">
+        <div class="target-item"><div class="target-label">1周目标</div><div class="target-val" style="color:var(--text)">${st.targets.w1}</div></div>
+        <div class="target-item"><div class="target-label">1月目标</div><div class="target-val" style="color:var(--yellow)">${st.targets.m1}</div></div>
+        <div class="target-item"><div class="target-label">3月目标</div><div class="target-val" style="color:var(--green)">${st.targets.m3}</div></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:10px">
+        <span>IV Rank <b style="color:${st.ivrank<30?'var(--green)':st.ivrank<50?'var(--yellow)':'var(--red)'}">${st.ivrank}</b></span>
+        <span>GEX <b style="color:${st.gex>=0?'var(--green)':'var(--red)'}">${st.gex>=0?'+':''}${st.gex}B</b></span>
+        <span>Call流 <b style="color:var(--green)">$${st.callflow}亿</b></span>
+        <span>PCR <b style="color:${st.pcr<0.7?'var(--green)':st.pcr<1?'var(--yellow)':'var(--red)'}">${st.pcr}</b></span>
+      </div>
+      <div class="pick-signals">
+        ${st.signals.map(sig=>`<span class="signal-tag" style="background:${signalColor(sig)}22;color:${signalColor(sig)}">${sig}</span>`).join('')}
+      </div>
+      <div class="pick-thesis">
+        <b style="color:var(--gold)">📊 华尔街分析师观点：</b> ${st.thesis}
+      </div>
+      <div style="margin-top:8px">
+        <div style="font-size:9px;color:var(--text3);margin-bottom:4px">期权隐含概率分布（30天）</div>
+        <div class="prob-row"><span class="prob-label">看涨>5%</span><div class="prob-bar"><div class="prob-fill" style="width:${st.probs[0]}%;background:var(--green)"></div></div><span class="prob-val" style="color:var(--green)">${st.probs[0]}%</span></div>
+        <div class="prob-row"><span class="prob-label">看涨>10%</span><div class="prob-bar"><div class="prob-fill" style="width:${st.probs[1]}%;background:var(--yellow)"></div></div><span class="prob-val" style="color:var(--yellow)">${st.probs[1]}%</span></div>
+        <div class="prob-row"><span class="prob-label">看涨>20%</span><div class="prob-bar"><div class="prob-fill" style="width:${st.probs[2]}%;background:var(--blue)"></div></div><span class="prob-val" style="color:var(--blue)">${st.probs[2]}%</span></div>
+      </div>
+    </div>`).join('');
 
-  const gexData = strikes.map((K, i) => {
-    const callGex =  Math.random()*3 + (i < atmIdx+1 ? (atmIdx+1-i)*1.5 : 0);
-    const putGex  = -(Math.random()*2 + (i < atmIdx ? (atmIdx-i)*1.0 : 0));
-    return {K, net: callGex + putGex};
+  // 智能资金流水
+  const allFlows = top3.flatMap((st,i)=>[
+    {time:randomTime(),t:st.t,type:'C',k:Math.round(st.p*1.05/5)*5,prem:st.callflow*0.4,sweep:i===0,block:i<2},
+    {time:randomTime(),t:st.t,type:Math.random()>0.7?'P':'C',k:Math.round(st.p/5)*5,prem:st.callflow*0.2,sweep:false,block:i===0},
+  ]).sort(()=>Math.random()-0.5).slice(0,10);
+
+  const flowsHTML = allFlows.map(f=>`
+    <div class="flow-row">
+      <span style="color:var(--text3);font-size:10px">${f.time}</span>
+      <span class="${f.type==='C'?'flow-side-c':'flow-side-p'}">${f.type==='C'?'BUY CALL':'BUY PUT'}</span>
+      <span style="font-weight:700;color:var(--text)">${f.t}</span>
+      <span style="color:var(--text3)">$${f.k}</span>
+      ${f.sweep?'<span class="flow-sweep">SWEEP</span>':''}
+      ${f.block?'<span class="flow-block">BLOCK</span>':''}
+      <span class="flow-premium">${fmtPrem(f.prem*1000)}</span>
+    </div>`).join('');
+
+  // GEX图（SVG）
+  const gexSVGId = 'gex-svg-'+s.id;
+
+  // 整体HTML
+  document.getElementById('main-grid').innerHTML = `
+    <!-- ── TOP 3 PICKS ── -->
+    <div class="panel span3">
+      <div class="panel-hdr">
+        <span style="color:var(--gold)">★</span>
+        <span class="panel-hdr-title">${s.name}板块 Top 3 看涨推荐（华尔街分析师 · 期权流驱动）</span>
+        <span style="margin-left:auto;font-size:9px;color:var(--text3)">基于：Smart Money + GEX + IV Rank + 动量得分</span>
+      </div>
+      <div class="panel-body" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        ${picksHTML}
+      </div>
+    </div>
+
+    <!-- ── SMART MONEY FLOW ── -->
+    <div class="panel">
+      <div class="panel-hdr"><span class="dot" style="width:7px;height:7px;border-radius:50%;background:var(--yellow);display:inline-block"></span><span class="panel-hdr-title">Smart Money 实时大单流</span></div>
+      <div class="panel-body">${flowsHTML}</div>
+    </div>
+
+    <!-- ── GEX 图 ── -->
+    <div class="panel">
+      <div class="panel-hdr"><span class="panel-hdr-title">Gamma暴露（GEX）分布</span></div>
+      <div class="gex-mini">
+        <svg id="${gexSVGId}" width="100%" height="160" viewBox="0 0 340 160"></svg>
+        <div id="gex-stats-${s.id}" style="display:flex;gap:12px;margin-top:6px;font-size:10px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <!-- ── 预测趋势图 ── -->
+    <div class="panel">
+      <div class="panel-hdr"><span class="panel-hdr-title">期权隐含价格路径预测</span>
+        <div class="pred-range" style="margin-left:auto">
+          <button class="pred-btn active" onclick="setPredStock(this,'${top3[0].t}','${s.id}')">Top1</button>
+          <button class="pred-btn" onclick="setPredStock(this,'${top3[1].t}','${s.id}')">Top2</button>
+          <button class="pred-btn" onclick="setPredStock(this,'${top3[2].t}','${s.id}')">Top3</button>
+        </div>
+      </div>
+      <div id="pred-container">
+        <svg id="pred-svg-${s.id}" width="100%" height="180" viewBox="0 0 340 180"></svg>
+        <div id="pred-legend-${s.id}" style="display:flex;gap:12px;font-size:10px;margin-top:4px;flex-wrap:wrap"></div>
+      </div>
+    </div>
+
+    <!-- ── 观察列表 ── -->
+    <div class="panel span2">
+      <div class="panel-hdr"><span class="panel-hdr-title">板块完整观察列表（按综合评分）</span></div>
+      <div class="panel-body">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="color:var(--text3);font-size:9px;text-transform:uppercase">
+            <th style="text-align:left;padding:4px 8px">股票</th>
+            <th style="padding:4px 8px">评分</th><th style="padding:4px 8px">价格</th>
+            <th style="padding:4px 8px">涨跌</th><th style="padding:4px 8px">IV Rank</th>
+            <th style="padding:4px 8px">GEX</th><th style="padding:4px 8px">Call流</th>
+            <th style="padding:4px 8px">PCR</th><th style="padding:4px 8px">1月目标</th>
+            <th style="text-align:left;padding:4px 8px">信号</th>
+          </tr></thead>
+          <tbody>
+          ${sorted.map((st,i)=>`<tr style="${i<3?'background:var(--bg3)':''}">
+            <td style="padding:5px 8px"><b style="color:${scoreColor(st.score)}">${st.t}</b> <span style="color:var(--text3);font-size:10px">${st.n}</span></td>
+            <td style="text-align:center;padding:5px 8px"><b style="color:${scoreColor(st.score)}">${st.score}</b></td>
+            <td style="text-align:right;padding:5px 8px">$${st.p}</td>
+            <td style="text-align:right;padding:5px 8px;color:${st.chg>=0?'var(--green)':'var(--red)'}">${st.chg>=0?'+':''}${st.chg}%</td>
+            <td style="text-align:right;padding:5px 8px;color:${st.ivrank<30?'var(--green)':st.ivrank<50?'var(--yellow)':'var(--red)'}">${st.ivrank}</td>
+            <td style="text-align:right;padding:5px 8px;color:${st.gex>=0?'var(--green)':'var(--red)'}">${st.gex>=0?'+':''}${st.gex}</td>
+            <td style="text-align:right;padding:5px 8px;color:var(--green)">$${st.callflow}亿</td>
+            <td style="text-align:right;padding:5px 8px;color:${st.pcr<0.7?'var(--green)':st.pcr<1?'var(--yellow)':'var(--red)'}">${st.pcr}</td>
+            <td style="text-align:right;padding:5px 8px;color:var(--yellow)">${st.targets.m1}</td>
+            <td style="padding:5px 8px">${st.signals.slice(0,2).map(sig=>`<span class="signal-tag" style="background:${signalColor(sig)}22;color:${signalColor(sig)}">${sig}</span>`).join(' ')}</td>
+          </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── ANALYST REPORT ── -->
+    <div class="panel">
+      <div class="panel-hdr"><span class="panel-hdr-title">华尔街分析师综合报告</span></div>
+      <div class="panel-body">
+        <div class="report-box">
+          <h4>📋 ${s.name}板块 — 期权流综合分析</h4>
+          <p><span class="bull">看多核心逻辑：</span>${top3[0].thesis.slice(0,80)}...</p>
+          <br>
+          <p><b>Top Pick: <span class="bull">${top3[0].t}</span></b> — 期权市场净Call保费$${top3[0].callflow}亿，Smart Money连续买入，IV Rank ${top3[0].ivrank}处于相对低位，期权便宜。</p>
+          <br>
+          <p><b>风险提示：</b><span class="bear"> IV crush风险</span>（财报后波动率骤降），
+          <span class="neutral">流动性风险</span>（部分OTM合约价差较宽）。</p>
+          <br>
+          <p style="color:var(--text3);font-size:9px">⚠️ 本分析基于期权流量数据，仅供参考，不构成投资建议。期权交易有较高风险。</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 渲染图表
+  setTimeout(() => {
+    renderGEXChart(s, gexSVGId);
+    renderPredChart(s, top3[0], `pred-svg-${s.id}`, `pred-legend-${s.id}`);
+  }, 50);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GEX 柱状图
+// ═══════════════════════════════════════════════════════════════
+function renderGEXChart(s, svgId) {
+  const el = document.getElementById(svgId);
+  if (!el) return;
+  const W = 340, H = 160;
+  const svg = d3.select('#'+svgId).attr('viewBox', `0 0 ${W} ${H}`);
+  svg.selectAll('*').remove();
+
+  const spot = s.stocks[0].p;
+  const stk  = Array.from({length:15}, (_,i) => Math.round(spot*(0.88+i*0.018)/5)*5);
+  const gex  = stk.map((k,i) => {
+    const dist = Math.abs(k - spot)/spot;
+    const base = s.stocks.reduce((sum,st)=>sum + st.gex * Math.exp(-dist*8) * (Math.random()*0.4+0.8), 0);
+    return {k, v: k < spot ? base * -0.4 : base * 0.8};
   });
 
-  const xScale = d3.scaleBand().domain(strikes.map(String)).range([30, W-10]).padding(0.1);
-  const ext    = d3.extent(gexData, d => d.net);
-  const yScale = d3.scaleLinear().domain([Math.min(ext[0],-1), Math.max(ext[1],1)]).range([H-20, 10]);
+  const xBand = d3.scaleBand().domain(stk.map(String)).range([28,W-8]).padding(0.1);
+  const maxV  = d3.max(gex, d => Math.abs(d.v)) || 1;
+  const yScale = d3.scaleLinear().domain([-maxV*0.6, maxV]).range([H-18, 8]);
 
-  svg.append('line').attr('x1',30).attr('x2',W-10)
+  svg.append('line').attr('x1',28).attr('x2',W-8)
      .attr('y1',yScale(0)).attr('y2',yScale(0))
-     .attr('stroke','#30363d').attr('stroke-width',1);
+     .attr('stroke','var(--border2)').attr('stroke-width',1);
 
-  svg.selectAll('rect').data(gexData).enter().append('rect')
-    .attr('x', d => xScale(String(d.K)))
-    .attr('y', d => d.net >= 0 ? yScale(d.net) : yScale(0))
-    .attr('width', xScale.bandwidth())
-    .attr('height', d => Math.abs(yScale(d.net) - yScale(0)))
-    .attr('fill', d => d.net >= 0 ? '#3fb950' : '#f85149')
-    .attr('rx', 2).attr('opacity', 0.8);
+  svg.selectAll('rect.gbar').data(gex).enter().append('rect')
+    .attr('x', d => xBand(String(d.k))||0)
+    .attr('y', d => d.v>=0 ? yScale(d.v) : yScale(0))
+    .attr('width', xBand.bandwidth())
+    .attr('height', d => Math.abs(yScale(d.v)-yScale(0)))
+    .attr('fill', d => d.v>=0 ? '#00d084' : '#ff4560')
+    .attr('rx', 2).attr('opacity', .8);
 
   // 股价线
-  const spotX = xScale(String(strikes.reduce((b,s)=>Math.abs(s-spot)<Math.abs(b-spot)?s:b,strikes[0])));
-  if (spotX) {
-    svg.append('line').attr('x1',spotX+xScale.bandwidth()/2).attr('x2',spotX+xScale.bandwidth()/2)
-       .attr('y1',5).attr('y2',H-20).attr('stroke','#00e5ff').attr('stroke-width',1.5).attr('stroke-dasharray','4,2');
+  const nearK  = stk.reduce((b,k) => Math.abs(k-spot)<Math.abs(b-spot)?k:b, stk[0]);
+  const spotXX = (xBand(String(nearK))||0) + xBand.bandwidth()/2;
+  svg.append('line').attr('x1',spotXX).attr('x2',spotXX)
+     .attr('y1',4).attr('y2',H-18)
+     .attr('stroke','#00bcd4').attr('stroke-width',1.5).attr('stroke-dasharray','4,2');
+  svg.append('text').attr('x',spotXX+3).attr('y',12)
+     .attr('fill','#00bcd4').attr('font-size',8).text('NOW');
+
+  // X轴
+  svg.selectAll('text.xt').data(stk.filter((_,i)=>i%3===0)).enter().append('text')
+    .attr('x', d => (xBand(String(d))||0)+xBand.bandwidth()/2)
+    .attr('y', H-3).attr('text-anchor','middle').attr('fill','var(--text3)').attr('font-size',7).text(d=>d);
+
+  const totalGEX = gex.reduce((s,d)=>s+d.v,0);
+  const flipK = gex.find((d,i)=>i>0&&gex[i-1].v*d.v<0);
+  document.getElementById(`gex-stats-${s.id}`).innerHTML = `
+    <span>总GEX <b style="color:${totalGEX>=0?'var(--green)':'var(--red)'}">${totalGEX>=0?'+':''}${totalGEX.toFixed(1)}B</b></span>
+    <span>翻转点 <b style="color:var(--gold)">$${flipK?flipK.k:Math.round(spot*0.98)}</b></span>
+    <span>Call Wall <b style="color:var(--green)">$${stk[Math.round(stk.length*0.75)]}</b></span>
+    <span>Put Wall <b style="color:var(--red)">$${stk[Math.round(stk.length*0.25)]}</b></span>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 期权隐含预测路径图
+// ═══════════════════════════════════════════════════════════════
+function renderPredChart(s, stock, svgId, legendId) {
+  const el = document.getElementById(svgId);
+  if (!el) return;
+  const W = 340, H = 180, margin = {l:36,r:12,t:16,b:24};
+  const iw = W-margin.l-margin.r, ih = H-margin.t-margin.b;
+
+  const svg = d3.select('#'+svgId).attr('viewBox',`0 0 ${W} ${H}`);
+  svg.selectAll('*').remove();
+
+  const g = svg.append('g').attr('transform',`translate(${margin.l},${margin.t})`);
+
+  const days = 30, n = days+1;
+  const spots = Array.from({length:n},(_,i)=>i);
+  const s0    = stock.p;
+  const sigma = (stock.iv||28)/100/Math.sqrt(252);
+  const drift = 0.0003;
+
+  // 生成多条模拟路径
+  function genPath(seed) {
+    let p = s0;
+    return spots.map(d => {
+      if (d>0) p = p*Math.exp(drift + sigma*(Math.sin(seed*d*7.3+d)*0.9 + (d/n-0.5)*0.5));
+      return {d, p};
+    });
   }
 
-  svg.selectAll('.xt').data(strikes.filter((_,i)=>i%3===0)).enter().append('text')
-    .attr('x', d => xScale(String(d)) + xScale.bandwidth()/2)
-    .attr('y', H-5).attr('text-anchor','middle').attr('fill','#484f58').attr('font-size',9)
-    .text(d => d);
+  const paths = Array.from({length:8},(_,i)=>genPath(i+1));
+  const bullPath = genPath(99); // 牛市路径
+  const bearPath = genPath(-5); // 熊市路径
 
-  const total = gexData.reduce((s,d)=>s+d.net,0);
-  const flip  = strikes[gexData.findIndex((d,i)=>i>0 && gexData[i-1].net*d.net<0)] || 188;
-  document.getElementById('gex-info').innerHTML = `
-    <div><span style="color:#484f58;font-size:10px">总GEX</span><br><span style="color:${total>=0?'#3fb950':'#f85149'};font-weight:700">${total>=0?'+':''}${total.toFixed(1)}M</span></div>
-    <div><span style="color:#484f58;font-size:10px">翻转点</span><br><span style="color:#ffd700;font-weight:700">$${flip}</span></div>
-    <div><span style="color:#484f58;font-size:10px">Call Wall</span><br><span style="color:#3fb950;font-weight:700">$195</span></div>
-    <div><span style="color:#484f58;font-size:10px">Put Wall</span><br><span style="color:#f85149;font-weight:700">$185</span></div>
-    <div><span style="color:#484f58;font-size:10px">市场状态</span><br><span style="color:#3fb950;font-weight:700">✅ 正Gamma</span></div>`;
+  // 目标价格（从期权隐含）
+  const target1m = parseFloat(stock.targets.m1.replace('$',''));
+
+  const allPrices = paths.flat().map(d=>d.p);
+  allPrices.push(s0*1.22, s0*0.82);
+
+  const xScale = d3.scaleLinear().domain([0,days]).range([0,iw]);
+  const yScale = d3.scaleLinear().domain([d3.min(allPrices)*0.98, d3.max(allPrices)*1.02]).range([ih,0]);
+
+  // 置信区间（2-sigma）
+  const upper1 = spots.map(d => s0*Math.exp((drift-0.5*sigma*sigma)*d + sigma*Math.sqrt(d)*1.645));
+  const lower1 = spots.map(d => s0*Math.exp((drift-0.5*sigma*sigma)*d - sigma*Math.sqrt(d)*1.645));
+  const upper2 = spots.map(d => s0*Math.exp((drift-0.5*sigma*sigma)*d + sigma*Math.sqrt(d)*1.0));
+  const lower2 = spots.map(d => s0*Math.exp((drift-0.5*sigma*sigma)*d - sigma*Math.sqrt(d)*1.0));
+
+  const areaFn = d3.area().x(d=>xScale(d)).y0(d=>yScale(lower1[d])).y1(d=>yScale(upper1[d]));
+  const area2Fn = d3.area().x(d=>xScale(d)).y0(d=>yScale(lower2[d])).y1(d=>yScale(upper2[d]));
+
+  // 阴影区
+  g.append('path').datum(spots).attr('d',areaFn).attr('fill','#2196f3').attr('opacity',.08);
+  g.append('path').datum(spots).attr('d',area2Fn).attr('fill','#2196f3').attr('opacity',.12);
+
+  // 模拟路径
+  const line = d3.line().x(d=>xScale(d.d)).y(d=>yScale(d.p));
+  paths.forEach(path=>{
+    g.append('path').datum(path).attr('d',line).attr('fill','none')
+     .attr('stroke','#2196f3').attr('stroke-width',.8).attr('opacity',.25);
+  });
+
+  // 牛市/熊市路径
+  g.append('path').datum(bullPath).attr('d',line).attr('fill','none')
+   .attr('stroke','var(--green)').attr('stroke-width',1.5).attr('stroke-dasharray','4,2').attr('opacity',.7);
+  g.append('path').datum(bearPath).attr('d',line).attr('fill','none')
+   .attr('stroke','var(--red)').attr('stroke-width',1.5).attr('stroke-dasharray','4,2').attr('opacity',.7);
+
+  // 期权隐含中位路径
+  const medianPath = spots.map(d=>({d, p:s0*Math.exp((drift-0.5*sigma*sigma)*d)}));
+  g.append('path').datum(medianPath).attr('d',line).attr('fill','none')
+   .attr('stroke',stock.chg>=0?'var(--green)':'var(--red)').attr('stroke-width',2).attr('opacity',.9);
+
+  // 现价线
+  g.append('line').attr('x1',0).attr('x2',iw).attr('y1',yScale(s0)).attr('y2',yScale(s0))
+   .attr('stroke','var(--text3)').attr('stroke-width',.8).attr('stroke-dasharray','2,2');
+
+  // 目标价线
+  g.append('line').attr('x1',xScale(21)).attr('x2',iw).attr('y1',yScale(target1m)).attr('y2',yScale(target1m))
+   .attr('stroke','var(--gold)').attr('stroke-width',1).attr('stroke-dasharray','3,2').attr('opacity',.7);
+  g.append('text').attr('x',iw+2).attr('y',yScale(target1m)+3).attr('fill','var(--gold)').attr('font-size',8).text(`T $${target1m}`);
+
+  // Y轴
+  g.append('g').call(d3.axisLeft(yScale).ticks(4).tickFormat(d=>'$'+d3.format('.0f')(d)))
+   .selectAll('text').attr('fill','var(--text3)').attr('font-size',8);
+  g.select('.domain').attr('stroke','var(--border)');
+  g.selectAll('.tick line').attr('stroke','var(--border)');
+
+  // X轴
+  g.append('g').attr('transform',`translate(0,${ih})`)
+   .call(d3.axisBottom(xScale).ticks(5).tickFormat(d=>d+'d'))
+   .selectAll('text').attr('fill','var(--text3)').attr('font-size',8);
+
+  // 当前点
+  g.append('circle').attr('cx',0).attr('cy',yScale(s0)).attr('r',3).attr('fill','var(--cyan)');
+  g.append('text').attr('x',3).attr('y',yScale(s0)-4).attr('fill','var(--cyan)').attr('font-size',8).text('NOW');
+
+  document.getElementById(legendId).innerHTML = `
+    <span style="color:var(--green)">─── 牛市路径 +${stock.probs[0]}%概率</span>
+    <span style="color:var(--red)">─── 熊市路径</span>
+    <span style="color:var(--blue)">░ 90%置信区间</span>
+    <span style="color:var(--gold)">--- 期权目标价 ${stock.targets.m1}</span>`;
 }
 
-// ─── 综合评分 ─────────────────────────────────────────────────
-function renderScore() {
-  const score = 72;
-  const svg   = d3.select('#score-svg');
-  const W     = document.getElementById('score-svg').clientWidth || 280;
-  svg.attr('viewBox',`0 0 ${W} 110`).selectAll('*').remove();
-
-  const cx = W/2, cy = 58, r = 44;
-  const color = score>=70?'#3fb950':score>=45?'#d29922':'#f85149';
-  const tau = 2*Math.PI;
-  const arc = d3.arc().innerRadius(r-10).outerRadius(r).startAngle(0).endAngle(tau);
-  const arcFill = d3.arc().innerRadius(r-10).outerRadius(r).startAngle(-Math.PI/2).endAngle(-Math.PI/2 + tau*score/100);
-
-  const g = svg.append('g').attr('transform',`translate(${cx},${cy})`);
-  g.append('path').datum({}).attr('d', arc({innerRadius:r-10,outerRadius:r,startAngle:0,endAngle:tau}))
-   .attr('fill','#21262d');
-  g.append('path').datum({}).attr('d', arcFill()).attr('fill',color);
-  g.append('text').attr('text-anchor','middle').attr('dy',6).attr('font-size',24).attr('font-weight',700).attr('fill',color).text(score);
-  g.append('text').attr('text-anchor','middle').attr('dy',22).attr('font-size',10).attr('fill','#8b949e').text('综合评分');
-
-  const labels = ['BEARISH','NEUTRAL','BULLISH'];
-  const positions = [{x:-cx+10,y:55},{x:0,y:cy+8},{x:cx-10,y:55}];
-  // simple labels
-  svg.append('text').attr('x',10).attr('y',105).attr('fill','#f85149').attr('font-size',9).text('看空');
-  svg.append('text').attr('x',cx-10).attr('y',105).attr('fill','#8b949e').attr('font-size',9).text('中性');
-  svg.append('text').attr('x',W-28).attr('y',105).attr('fill','#3fb950').attr('font-size',9).text('看多');
+// ═══════════════════════════════════════════════════════════════
+// 切换板块
+// ═══════════════════════════════════════════════════════════════
+function setSector(id) {
+  activeSector = SECTORS.find(s=>s.id===id);
+  renderSidebar();
+  renderRotation();
+  renderSectorContent(activeSector);
 }
 
-document.getElementById('score-metrics').innerHTML = [
-  {label:'Smart Money', val:'18.2/25', color:'#3fb950'},
-  {label:'Technical',   val:'19.1/25', color:'#58a6ff'},
-  {label:'Volatility',  val:'17.5/25', color:'#d29922'},
-  {label:'Momentum',    val:'17.2/25', color:'#a371f7'},
-].map(m=>`<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-val" style="color:${m.color}">${m.val}</div></div>`).join('');
-
-// ─── 实时价格跳动 ─────────────────────────────────────────────
-function tick() {
-  spot = Math.max(180, Math.min(200, spot + (Math.random()-0.49)*0.15));
-  document.getElementById('spot').textContent = '$' + spot.toFixed(2);
-  renderChain();
-  renderGEX();
+function setPredStock(btn, ticker, sectorId) {
+  document.querySelectorAll('.pred-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const s  = SECTORS.find(x=>x.id===sectorId);
+  const st = s.stocks.find(x=>x.t===ticker);
+  renderPredChart(s, st, `pred-svg-${sectorId}`, `pred-legend-${sectorId}`);
 }
 
+function showDetail(ticker, sectorId) {
+  // 点击查看详情 — 简单toast提示
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#0a1929;border:1px solid #1e2d3d;border-radius:8px;padding:12px 18px;font-size:12px;color:#c9d8e8;z-index:999;animation:fadeIn .3s';
+  el.innerHTML = `📊 <b style="color:#00d084">${ticker}</b> — 已添加到自选监控`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 2500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 实时时钟 + 市场数据跳动
+// ═══════════════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('en-US',{hour12:false}) + ' EST';
+}
+
+let spy=476.82, qqq=408.14, vix=16.8;
+function tickMarket() {
+  spy = +(spy + (Math.random()-.49)*.15).toFixed(2);
+  qqq = +(qqq + (Math.random()-.49)*.18).toFixed(2);
+  vix = Math.max(12, Math.min(35, +(vix + (Math.random()-.5)*.1).toFixed(1)));
+  document.getElementById('spy-val').textContent = spy.toFixed(2);
+  document.getElementById('qqq-val').textContent = qqq.toFixed(2);
+  document.getElementById('vix-val').textContent = vix;
+  document.getElementById('vix-val').style.color = vix<15?'var(--green)':vix<20?'var(--yellow)':'var(--red)';
+}
+
+function randomTime() {
+  const h=15, m=Math.floor(Math.random()*59), s=Math.floor(Math.random()*59);
+  return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
 // 初始化
-renderChain();
-renderGEX();
-renderScore();
-setInterval(tick, 1500);
+// ═══════════════════════════════════════════════════════════════
+renderSidebar();
+renderRotation();
+renderSectorContent(activeSector);
+updateClock();
+setInterval(updateClock, 1000);
+setInterval(tickMarket, 2000);
 </script>
 </body>
-</html>
+</html>'''
+
+print("\n文件已写入，运行 deploy_pages.py 即可推送。")
