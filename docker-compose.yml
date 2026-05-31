@@ -1,0 +1,161 @@
+version: "3.9"
+
+# ============================================================
+# Goldman Sachs-Level Options Terminal — Docker Compose
+# ============================================================
+
+services:
+
+  # ─── PostgreSQL + TimescaleDB（时序数据库）───
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: options-db
+    environment:
+      POSTGRES_USER:     ${DB_USER:-options}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      POSTGRES_DB:       ${DB_NAME:-options_terminal}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-options}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ─── Redis（缓存 + Pub/Sub）───
+  redis:
+    image: redis:7-alpine
+    container_name: options-redis
+    command: redis-server --maxmemory 2gb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+    restart: unless-stopped
+
+  # ─── Python FastAPI 后端 ───
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: options-backend
+    environment:
+      DATABASE_URL:     postgresql://${DB_USER:-options}:${DB_PASSWORD:-secret}@db:5432/${DB_NAME:-options_terminal}
+      REDIS_URL:        redis://redis:6379
+      POLYGON_API_KEY:  ${POLYGON_API_KEY}
+      TRADIER_API_KEY:  ${TRADIER_API_KEY:-}
+      SECRET_KEY:       ${SECRET_KEY:-change-me-in-production}
+      ENVIRONMENT:      ${ENVIRONMENT:-development}
+      LOG_LEVEL:        ${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app/backend:ro
+      - ./core/build:/app/core/build:ro  # C++编译产物
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── React 前端（Nginx托管）───
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL:    ${VITE_API_URL:-http://localhost:8000}
+        VITE_WS_URL:     ${VITE_WS_URL:-ws://localhost:8000/ws}
+    container_name: options-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ─── C++ 编译器（构建时运行，不常驻）───
+  cpp-builder:
+    build:
+      context: .
+      dockerfile: core/Dockerfile.builder
+    container_name: options-cpp-builder
+    volumes:
+      - ./core:/workspace/core
+      - cpp_build:/workspace/core/build
+    command: >
+      bash -c "
+        cmake -B /workspace/core/build
+              -DCMAKE_BUILD_TYPE=Release
+              -DPYTHON_EXECUTABLE=$(which python3)
+              -DBUILD_TESTS=ON &&
+        cmake --build /workspace/core/build -j$(nproc) &&
+        echo '✅ C++ 核心引擎编译完成'
+      "
+    profiles: ["build"]  # 仅在显式指定时运行: docker-compose --profile build up cpp-builder
+
+  # ─── Celery Worker（异步任务：回测/数据导入）───
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: options-worker
+    command: celery -A backend.tasks worker --loglevel=info --concurrency=4
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-options}:${DB_PASSWORD:-secret}@db:5432/${DB_NAME:-options_terminal}
+      REDIS_URL:    redis://redis:6379
+    depends_on:
+      - redis
+      - db
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  # ─── Prometheus（监控指标采集）───
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: options-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./scripts/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    profiles: ["monitoring"]
+    restart: unless-stopped
+
+  # ─── Grafana（监控仪表盘）───
+  grafana:
+    image: grafana/grafana:latest
+    container_name: options-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    profiles: ["monitoring"]
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+volumes:
+  db_data:
+  redis_data:
+  cpp_build:
+  grafana_data:
+
+networks:
+  default:
+    name: options-network

@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# C++
+*.o
+*.so
+*.a
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+
+# Node
+node_modules/
+.next/
+dist/
+*.local
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+*.csv
+*.parquet
+data/cache/
+data/raw/
+
+# Logs
+*.log
+logs/
