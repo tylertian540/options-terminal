@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Options Terminal — Goldman Sachs Level</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1117;color:#e6edf3;font-family:'Segoe UI',monospace;overflow-x:hidden}
+header{background:#161b22;border-bottom:1px solid #30363d;padding:12px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:18px;font-weight:700;color:#58a6ff;letter-spacing:1px}
+.badge{background:#388bfd22;color:#58a6ff;border:1px solid #388bfd55;border-radius:12px;padding:3px 10px;font-size:11px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto;gap:12px;padding:16px;height:calc(100vh - 56px)}
+.panel{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px;overflow:hidden}
+.panel-title{font-size:11px;color:#8b949e;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.green{background:#3fb950}.yellow{background:#d29922}.red{background:#f85149}.blue{background:#58a6ff}
+/* Greeks panel */
+.greek-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.greek-card{background:#0d1117;border-radius:6px;padding:8px;text-align:center}
+.greek-name{font-size:10px;color:#8b949e}
+.greek-val{font-size:15px;font-weight:700;margin-top:2px}
+/* Smart Money */
+.flow-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #21262d;font-size:11px}
+.tag{border-radius:3px;padding:1px 6px;font-size:10px;font-weight:700}
+.tag-call{background:#3fb95022;color:#3fb950}
+.tag-put{background:#f8514922;color:#f85149}
+.tag-sweep{background:#d2992222;color:#d29922}
+.tag-block{background:#58a6ff22;color:#58a6ff}
+.premium{color:#ffd700;font-weight:700;margin-left:auto}
+/* Score */
+.score-ring{display:flex;justify-content:center;margin:8px 0}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.metric{background:#0d1117;border-radius:6px;padding:8px}
+.metric-label{font-size:10px;color:#8b949e}
+.metric-val{font-size:14px;font-weight:700;margin-top:2px}
+/* Bottom panels */
+.panel.span2{grid-column:span 2}
+.panel.span3{grid-column:span 3}
+/* Ticker */
+.ticker{display:flex;gap:24px;margin-bottom:10px}
+.ticker-item{display:flex;flex-direction:column}
+.ticker-label{font-size:10px;color:#8b949e}
+.ticker-val{font-size:16px;font-weight:700}
+.up{color:#3fb950}.down{color:#f85149}.neutral{color:#58a6ff}
+/* Chain table */
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{color:#8b949e;font-weight:400;padding:4px 8px;border-bottom:1px solid #21262d;text-align:right}
+th:first-child{text-align:left}
+td{padding:4px 8px;border-bottom:1px solid #161b22;text-align:right;transition:background .15s}
+tr:hover td{background:#21262d}
+.atm{background:#1f2d1f!important}
+.atm td{color:#3fb950}
+/* Alert bar */
+.alert-bar{background:#d2992222;border:1px solid #d29922;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#d29922}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">⚡ OPTIONS TERMINAL</div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <span style="font-size:12px;color:#8b949e">AAPL · LIVE</span>
+    <span class="badge">Goldman Sachs Level</span>
+    <span class="badge" style="background:#3fb95022;color:#3fb950;border-color:#3fb95055">● CONNECTED</span>
+  </div>
+</header>
+
+<div class="grid">
+
+  <!-- Panel 1: Ticker + Option Chain -->
+  <div class="panel span2">
+    <div class="panel-title"><span class="dot blue"></span>实时期权链</div>
+    <div class="ticker" id="ticker">
+      <div class="ticker-item"><span class="ticker-label">AAPL</span><span class="ticker-val up" id="spot">$189.34</span></div>
+      <div class="ticker-item"><span class="ticker-label">涨跌</span><span class="ticker-val up">+1.24%</span></div>
+      <div class="ticker-item"><span class="ticker-label">IV Rank</span><span class="ticker-val neutral" id="ivr">42</span></div>
+      <div class="ticker-item"><span class="ticker-label">PCR</span><span class="ticker-val" id="pcr" style="color:#d29922">0.82</span></div>
+      <div class="ticker-item"><span class="ticker-label">VIX</span><span class="ticker-val neutral">18.4</span></div>
+    </div>
+    <table id="chain-table">
+      <thead><tr>
+        <th>行权价</th>
+        <th>Call IV</th><th>Call Delta</th><th>Call Bid</th><th>Call Ask</th>
+        <th>Call OI</th>
+        <th></th>
+        <th>Put OI</th>
+        <th>Put Bid</th><th>Put Ask</th><th>Put Delta</th><th>Put IV</th>
+      </tr></thead>
+      <tbody id="chain-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Panel 2: Greeks -->
+  <div class="panel">
+    <div class="panel-title"><span class="dot green"></span>18 Greeks 仪表盘</div>
+    <div class="greek-grid" id="greeks-grid"></div>
+  </div>
+
+  <!-- Panel 3: Smart Money -->
+  <div class="panel">
+    <div class="panel-title"><span class="dot yellow"></span>Smart Money 大单流水</div>
+    <div id="smart-money-list"></div>
+  </div>
+
+  <!-- Panel 4: GEX -->
+  <div class="panel">
+    <div class="panel-title"><span class="dot red"></span>Gamma 暴露（GEX）</div>
+    <svg id="gex-chart" width="100%" height="180"></svg>
+    <div id="gex-info" style="display:flex;gap:16px;margin-top:8px;font-size:11px"></div>
+  </div>
+
+  <!-- Panel 5: Score -->
+  <div class="panel">
+    <div class="panel-title"><span class="dot blue"></span>综合评分 + 概率分布</div>
+    <svg id="score-svg" width="100%" height="110"></svg>
+    <div class="metrics" id="score-metrics"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── 数据模拟 ──────────────────────────────────────────────────
+const SPOT0 = 189.34;
+let spot = SPOT0;
+
+const strikes = [175,177.5,180,182.5,185,187.5,190,192.5,195,197.5,200,202.5,205];
+const atmIdx  = 6; // 190 ~ ATM
+
+function bsmApprox(S, K, T, sigma, isCall) {
+  const d1 = (Math.log(S/K) + (0.05 + 0.5*sigma*sigma)*T) / (sigma*Math.sqrt(T));
+  const d2 = d1 - sigma*Math.sqrt(T);
+  const N  = x => 0.5*(1+Math.sign(x)*Math.sqrt(1-Math.exp(-0.7854*x*x)));
+  const price = isCall ? S*N(d1) - K*Math.exp(-0.05*T)*N(d2)
+                       : K*Math.exp(-0.05*T)*N(-d2) - S*N(-d1);
+  const delta = isCall ? N(d1) : N(d1)-1;
+  const gamma = Math.exp(-0.5*d1*d1)/(S*sigma*Math.sqrt(2*Math.PI*T));
+  return {price: Math.max(0.01, price), delta, gamma};
+}
+
+function getChainData() {
+  const T = 30/365;
+  return strikes.map((K, i) => {
+    const otm   = (K - spot) / spot;
+    const skew  = Math.max(0, -otm * 0.4);
+    const sigma = 0.22 + skew + (Math.random()-0.5)*0.003;
+    const call  = bsmApprox(spot, K, T, sigma, true);
+    const put   = bsmApprox(spot, K, T, sigma, false);
+    const callOI = Math.round(5000 * Math.exp(-Math.abs(i-atmIdx)*0.6) + Math.random()*500);
+    const putOI  = Math.round(4500 * Math.exp(-Math.abs(i-atmIdx)*0.5) + Math.random()*500);
+    return {K, sigma, call, put, callOI, putOI};
+  });
+}
+
+// ─── 期权链渲染 ───────────────────────────────────────────────
+function renderChain() {
+  const data = getChainData();
+  const tbody = document.getElementById('chain-body');
+  tbody.innerHTML = data.map((d,i) => {
+    const isAtm = i === atmIdx;
+    const cls = isAtm ? 'atm' : '';
+    const spread = d.call.price * 0.02;
+    return `<tr class="${cls}">
+      <td style="text-align:left;font-weight:700">${d.K}</td>
+      <td>${(d.sigma*100).toFixed(1)}%</td>
+      <td>${d.call.delta.toFixed(2)}</td>
+      <td>${(d.call.price-spread/2).toFixed(2)}</td>
+      <td>${(d.call.price+spread/2).toFixed(2)}</td>
+      <td style="color:#58a6ff">${d.callOI.toLocaleString()}</td>
+      <td style="text-align:center;color:#30363d">│</td>
+      <td style="color:#f85149">${d.putOI.toLocaleString()}</td>
+      <td>${(d.put.price-spread/2).toFixed(2)}</td>
+      <td>${(d.put.price+spread/2).toFixed(2)}</td>
+      <td>${d.put.delta.toFixed(2)}</td>
+      <td>${(d.sigma*100).toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Greeks仪表盘 ─────────────────────────────────────────────
+const greeksData = [
+  {name:'Delta',  val:0.52,  color:'#3fb950'},
+  {name:'Gamma',  val:0.024, color:'#58a6ff'},
+  {name:'Theta',  val:-0.08, color:'#f85149'},
+  {name:'Vega',   val:0.18,  color:'#d29922'},
+  {name:'Rho',    val:0.09,  color:'#8b949e'},
+  {name:'Vanna',  val:-0.003,color:'#a371f7'},
+  {name:'Charm',  val:-0.01, color:'#79c0ff'},
+  {name:'Vomma',  val:0.002, color:'#ffa657'},
+  {name:'Speed',  val:-0.001,color:'#ff7b72'},
+  {name:'Zomma',  val:0.0004,color:'#d2a8ff'},
+  {name:'Color',  val:-0.002,color:'#7ee787'},
+  {name:'Ultima', val:0.0001,color:'#ffa657'},
+  {name:'GEX',    val:2.4,   color:'#3fb950', unit:'M'},
+  {name:'DEX',    val:8.1,   color:'#58a6ff', unit:'M'},
+  {name:'IVR',    val:42,    color:'#d29922',  unit:''},
+  {name:'Skew',   val:-0.03, color:'#ff7b72'},
+  {name:'VolTS',  val:0.015, color:'#79c0ff'},
+  {name:'PCR',    val:0.82,  color:'#d29922'},
+];
+
+document.getElementById('greeks-grid').innerHTML = greeksData.map(g =>
+  `<div class="greek-card">
+    <div class="greek-name">${g.name}</div>
+    <div class="greek-val" style="color:${g.color}">${g.val}${g.unit||''}</div>
+  </div>`
+).join('');
+
+// ─── Smart Money 流水 ─────────────────────────────────────────
+const flows = [
+  {time:'15:42:18',sym:'AAPL',type:'C',K:195,exp:'1/17',size:2500,prem:'$1.2M',side:'BUY', sweep:true, block:false},
+  {time:'15:38:05',sym:'AAPL',type:'P',K:185,exp:'1/17',size:800, prem:'$320K',side:'BUY', sweep:false,block:true},
+  {time:'15:31:44',sym:'AAPL',type:'C',K:200,exp:'2/21',size:1200,prem:'$480K',side:'BUY', sweep:true, block:false},
+  {time:'15:28:12',sym:'AAPL',type:'C',K:190,exp:'1/10',size:3000,prem:'$2.1M',side:'BUY', sweep:true, block:true},
+  {time:'15:21:33',sym:'AAPL',type:'P',K:180,exp:'1/17',size:600, prem:'$180K',side:'BUY', sweep:false,block:false},
+  {time:'15:14:07',sym:'AAPL',type:'C',K:192,exp:'1/24',size:900, prem:'$270K',side:'SELL',sweep:false,block:false},
+  {time:'15:08:55',sym:'AAPL',type:'P',K:187,exp:'1/17',size:1500,prem:'$525K',side:'BUY', sweep:true, block:false},
+];
+
+document.getElementById('smart-money-list').innerHTML = flows.map(f =>
+  `<div class="flow-row">
+    <span style="color:#484f58;font-size:10px">${f.time}</span>
+    <span class="tag ${f.type==='C'?'tag-call':'tag-put'}">${f.side} ${f.type}</span>
+    <span style="color:#e6edf3;font-weight:700">${f.sym} $${f.K}</span>
+    <span style="color:#484f58">${f.exp}</span>
+    ${f.sweep?'<span class="tag tag-sweep">SWEEP</span>':''}
+    ${f.block?'<span class="tag tag-block">BLOCK</span>':''}
+    <span class="premium">${f.prem}</span>
+  </div>`
+).join('');
+
+// ─── GEX 柱状图 ───────────────────────────────────────────────
+function renderGEX() {
+  const svg = d3.select('#gex-chart');
+  const W = document.getElementById('gex-chart').clientWidth || 320;
+  const H = 180;
+  svg.attr('viewBox', `0 0 ${W} ${H}`).selectAll('*').remove();
+
+  const gexData = strikes.map((K, i) => {
+    const callGex =  Math.random()*3 + (i < atmIdx+1 ? (atmIdx+1-i)*1.5 : 0);
+    const putGex  = -(Math.random()*2 + (i < atmIdx ? (atmIdx-i)*1.0 : 0));
+    return {K, net: callGex + putGex};
+  });
+
+  const xScale = d3.scaleBand().domain(strikes.map(String)).range([30, W-10]).padding(0.1);
+  const ext    = d3.extent(gexData, d => d.net);
+  const yScale = d3.scaleLinear().domain([Math.min(ext[0],-1), Math.max(ext[1],1)]).range([H-20, 10]);
+
+  svg.append('line').attr('x1',30).attr('x2',W-10)
+     .attr('y1',yScale(0)).attr('y2',yScale(0))
+     .attr('stroke','#30363d').attr('stroke-width',1);
+
+  svg.selectAll('rect').data(gexData).enter().append('rect')
+    .attr('x', d => xScale(String(d.K)))
+    .attr('y', d => d.net >= 0 ? yScale(d.net) : yScale(0))
+    .attr('width', xScale.bandwidth())
+    .attr('height', d => Math.abs(yScale(d.net) - yScale(0)))
+    .attr('fill', d => d.net >= 0 ? '#3fb950' : '#f85149')
+    .attr('rx', 2).attr('opacity', 0.8);
+
+  // 股价线
+  const spotX = xScale(String(strikes.reduce((b,s)=>Math.abs(s-spot)<Math.abs(b-spot)?s:b,strikes[0])));
+  if (spotX) {
+    svg.append('line').attr('x1',spotX+xScale.bandwidth()/2).attr('x2',spotX+xScale.bandwidth()/2)
+       .attr('y1',5).attr('y2',H-20).attr('stroke','#00e5ff').attr('stroke-width',1.5).attr('stroke-dasharray','4,2');
+  }
+
+  svg.selectAll('.xt').data(strikes.filter((_,i)=>i%3===0)).enter().append('text')
+    .attr('x', d => xScale(String(d)) + xScale.bandwidth()/2)
+    .attr('y', H-5).attr('text-anchor','middle').attr('fill','#484f58').attr('font-size',9)
+    .text(d => d);
+
+  const total = gexData.reduce((s,d)=>s+d.net,0);
+  const flip  = strikes[gexData.findIndex((d,i)=>i>0 && gexData[i-1].net*d.net<0)] || 188;
+  document.getElementById('gex-info').innerHTML = `
+    <div><span style="color:#484f58;font-size:10px">总GEX</span><br><span style="color:${total>=0?'#3fb950':'#f85149'};font-weight:700">${total>=0?'+':''}${total.toFixed(1)}M</span></div>
+    <div><span style="color:#484f58;font-size:10px">翻转点</span><br><span style="color:#ffd700;font-weight:700">$${flip}</span></div>
+    <div><span style="color:#484f58;font-size:10px">Call Wall</span><br><span style="color:#3fb950;font-weight:700">$195</span></div>
+    <div><span style="color:#484f58;font-size:10px">Put Wall</span><br><span style="color:#f85149;font-weight:700">$185</span></div>
+    <div><span style="color:#484f58;font-size:10px">市场状态</span><br><span style="color:#3fb950;font-weight:700">✅ 正Gamma</span></div>`;
+}
+
+// ─── 综合评分 ─────────────────────────────────────────────────
+function renderScore() {
+  const score = 72;
+  const svg   = d3.select('#score-svg');
+  const W     = document.getElementById('score-svg').clientWidth || 280;
+  svg.attr('viewBox',`0 0 ${W} 110`).selectAll('*').remove();
+
+  const cx = W/2, cy = 58, r = 44;
+  const color = score>=70?'#3fb950':score>=45?'#d29922':'#f85149';
+  const tau = 2*Math.PI;
+  const arc = d3.arc().innerRadius(r-10).outerRadius(r).startAngle(0).endAngle(tau);
+  const arcFill = d3.arc().innerRadius(r-10).outerRadius(r).startAngle(-Math.PI/2).endAngle(-Math.PI/2 + tau*score/100);
+
+  const g = svg.append('g').attr('transform',`translate(${cx},${cy})`);
+  g.append('path').datum({}).attr('d', arc({innerRadius:r-10,outerRadius:r,startAngle:0,endAngle:tau}))
+   .attr('fill','#21262d');
+  g.append('path').datum({}).attr('d', arcFill()).attr('fill',color);
+  g.append('text').attr('text-anchor','middle').attr('dy',6).attr('font-size',24).attr('font-weight',700).attr('fill',color).text(score);
+  g.append('text').attr('text-anchor','middle').attr('dy',22).attr('font-size',10).attr('fill','#8b949e').text('综合评分');
+
+  const labels = ['BEARISH','NEUTRAL','BULLISH'];
+  const positions = [{x:-cx+10,y:55},{x:0,y:cy+8},{x:cx-10,y:55}];
+  // simple labels
+  svg.append('text').attr('x',10).attr('y',105).attr('fill','#f85149').attr('font-size',9).text('看空');
+  svg.append('text').attr('x',cx-10).attr('y',105).attr('fill','#8b949e').attr('font-size',9).text('中性');
+  svg.append('text').attr('x',W-28).attr('y',105).attr('fill','#3fb950').attr('font-size',9).text('看多');
+}
+
+document.getElementById('score-metrics').innerHTML = [
+  {label:'Smart Money', val:'18.2/25', color:'#3fb950'},
+  {label:'Technical',   val:'19.1/25', color:'#58a6ff'},
+  {label:'Volatility',  val:'17.5/25', color:'#d29922'},
+  {label:'Momentum',    val:'17.2/25', color:'#a371f7'},
+].map(m=>`<div class="metric"><div class="metric-label">${m.label}</div><div class="metric-val" style="color:${m.color}">${m.val}</div></div>`).join('');
+
+// ─── 实时价格跳动 ─────────────────────────────────────────────
+function tick() {
+  spot = Math.max(180, Math.min(200, spot + (Math.random()-0.49)*0.15));
+  document.getElementById('spot').textContent = '$' + spot.toFixed(2);
+  renderChain();
+  renderGEX();
+}
+
+// 初始化
+renderChain();
+renderGEX();
+renderScore();
+setInterval(tick, 1500);
+</script>
+</body>
+</html>
